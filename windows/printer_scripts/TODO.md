@@ -1,0 +1,6 @@
+# TODO LIST for windows printer
+- High overhead comes from sumantrapdf, try to lessen it
+- Current implementation doesn't support multiple services, try to fix it
+    - race condition: getting the new jobid
+    - deadlock: maybe none
+- Use Gunicorn to have a subroutine for printing?
