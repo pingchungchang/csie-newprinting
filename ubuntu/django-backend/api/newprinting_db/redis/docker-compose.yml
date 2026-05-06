@@ -1,0 +1,99 @@
+services:
+  # --- Redis Master ---
+  redis-master:
+    image: redis:7-alpine
+    container_name: redis-master
+    restart: always
+      # map master to localhost: 6379
+    command: >
+      redis-server --appendonly yes 
+      --replica-announce-ip 127.0.0.1 
+      --replica-announce-port 6379
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_master_data:/data
+
+  # --- Redis Slave ---
+  redis-slave:
+    image: redis:7-alpine
+    container_name: redis-slave
+    restart: always
+      # map slave to localhost:6380 
+    command: >
+      redis-server --slaveof redis-master 6379 --appendonly yes 
+      --replica-announce-ip 127.0.0.1 
+      --replica-announce-port 6380
+    depends_on:
+      - redis-master
+    ports:
+      - "6380:6379"
+    volumes:
+      - redis_slave_data:/data
+
+  # --- Sentinel 1, 2, 3 ---
+  sentinel-1: &sentinel_base
+    image: redis:7-alpine
+    container_name: redis-sentinel-1
+    restart: always
+    command: >
+      sh -c "mkdir -p /etc/redis &&
+             echo '等待 redis-master 網路解析...' &&
+             until getent hosts redis-master; do sleep 1; done &&
+             echo 'sentinel monitor mymaster 127.0.0.1 6379 2' > /etc/redis/sentinel.conf &&
+             echo 'sentinel down-after-milliseconds mymaster 5000' >> /etc/redis/sentinel.conf &&
+             echo 'sentinel failover-timeout mymaster 60000' >> /etc/redis/sentinel.conf &&
+             echo 'sentinel announce-ip 127.0.0.1' >> /etc/redis/sentinel.conf &&
+             echo 'sentinel announce-port 26379' >> /etc/redis/sentinel.conf &&
+             echo 'sentinel resolve-hostnames yes' >> /etc/redis/sentinel.conf &&
+             redis-sentinel /etc/redis/sentinel.conf"
+    depends_on:
+      - redis-master
+      - redis-slave
+    ports:
+      - "26379:26379"
+    volumes:
+      - sentinel_1_conf:/etc/redis
+
+  sentinel-2:
+    <<: *sentinel_base
+    container_name: redis-sentinel-2
+    command: >
+      sh -c "mkdir -p /etc/redis &&
+             until getent hosts redis-master; do sleep 1; done &&
+             echo 'sentinel monitor mymaster 127.0.0.1 6379 2' > /etc/redis/sentinel.conf &&
+             echo 'sentinel down-after-milliseconds mymaster 5000' >> /etc/redis/sentinel.conf &&
+             echo 'sentinel failover-timeout mymaster 60000' >> /etc/redis/sentinel.conf &&
+             echo 'sentinel announce-ip 127.0.0.1' >> /etc/redis/sentinel.conf &&
+             echo 'sentinel announce-port 26380' >> /etc/redis/sentinel.conf &&
+             echo 'sentinel resolve-hostnames yes' >> /etc/redis/sentinel.conf &&
+             redis-sentinel /etc/redis/sentinel.conf"
+    ports:
+      - "26380:26379"
+    volumes:
+      - sentinel_2_conf:/etc/redis
+
+  sentinel-3:
+    <<: *sentinel_base
+    container_name: redis-sentinel-3
+    command: >
+      sh -c "mkdir -p /etc/redis &&
+             until getent hosts redis-master; do sleep 1; done &&
+             echo 'sentinel monitor mymaster 127.0.0.1 6379 2' > /etc/redis/sentinel.conf &&
+             echo 'sentinel down-after-milliseconds mymaster 5000' >> /etc/redis/sentinel.conf &&
+             echo 'sentinel failover-timeout mymaster 60000' >> /etc/redis/sentinel.conf &&
+             echo 'sentinel announce-ip 127.0.0.1' >> /etc/redis/sentinel.conf &&
+             echo 'sentinel announce-port 26381' >> /etc/redis/sentinel.conf &&
+             echo 'sentinel resolve-hostnames yes' >> /etc/redis/sentinel.conf &&
+             redis-sentinel /etc/redis/sentinel.conf"
+    ports:
+      - "26381:26379"
+    volumes:
+      - sentinel_3_conf:/etc/redis
+
+volumes:
+  redis_master_data:
+  redis_slave_data:
+  sentinel_1_conf:
+  sentinel_2_conf:
+  sentinel_3_conf:
