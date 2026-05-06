@@ -1,0 +1,12 @@
+django
+django-stubs
+djangorestframework
+djangorestframework-stubs
+python-ldap
+django-auth-ldap
+grpcio
+cryptography
+protobuf
+psycopg2-binary
+python-dotenv
+pypdf
