@@ -29,6 +29,8 @@ ON CONFLICT(username) DO NOTHING;
         (username, INIT_BALANCE),
     )
     conn.commit()
+    cursor.close()
+    conn.close()
 
 
 # withdraws money, returns (success or not, msg)
@@ -49,8 +51,11 @@ def safe_withdraw(username: str, amount: int) -> (bool, str):
             return (True, f"{username} has withdrawn {amount}")
         else:
             return (False, f"{username} may not have enough money")
-    except sqlite3.Error as e:
+    except Exception as e:
         return (False, f"DB error: {e}")
+    finally:
+        cursor.close()
+        conn.close()
 
 
 def set_balance(username: str, amount: int):
@@ -65,8 +70,11 @@ def set_balance(username: str, amount: int):
         cursor.execute(sql, (amount, username))
         conn.commit()
         return (True, f"{username}'s balance has been set to {amount}")
-    except sqlite3.Error as e:
+    except Exception as e:
         return (False, f"DB error: {e}")
+    finally:
+        cursor.close()
+        conn.close()
 
 
 # returns -1 if failed, returns correct value if success
@@ -81,9 +89,12 @@ def query_balance(username: str) -> int:
             return result[0]
         else:
             return -1
-    except sqlite3.Error as e:
+    except Exception as e:
         print(f"DB query_balance error: {e}")
         return -1
+    finally:
+        cursor.close()
+        conn.close()
 
 def init():
     global conn_params

@@ -1,4 +1,4 @@
-# balance sqlite3 test server
+# balance postgresql test server
 ## Notes
 It works by inserting those unseen names with an `INITIAL_BALANCE`, therefore it assumes all passed users are already checked and valid!
 
