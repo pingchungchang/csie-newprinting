@@ -5,7 +5,7 @@ from typing import TypedDict, cast
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.models import User
 from django.core.files.uploadedfile import UploadedFile
-from pypdf import PdfReader
+from pypdf import PdfReader, PdfWriter
 from rest_framework import permissions, serializers, status
 from rest_framework.parsers import BaseParser, FormParser, JSONParser, MultiPartParser
 from rest_framework.request import Request
@@ -27,7 +27,10 @@ class PdfUploadData(TypedDict):
 
 class PdfUploadSerializer(serializers.Serializer[PdfUploadData]):
     # files = serializers.ListField(child=serializers.FileField(), allow_empty=False)
-    file: serializers.FileField = serializers.FileField()
+    files = serializers.ListField(
+        child=serializers.FileField(allow_empty_file=False, use_url=False),
+        allow_empty=False,
+    )
     duplex: serializers.BooleanField = serializers.BooleanField(
         default=False, label="雙面列印"
     )
@@ -98,21 +101,43 @@ class PrintView(APIView):
                 {"message": "Serializer error"}, status=status.HTTP_403_FORBIDDEN
             )
 
-        file: UploadedFile = cast(UploadedFile, serializer.validated_data["file"])
+        files: list[UploadedFile] = cast(
+            list[UploadedFile], serializer.validated_data["files"]
+        )
         duplex: bool = cast(bool, serializer.validated_data["duplex"])
 
-        foo = file.read()
+        writer: PdfWriter = PdfWriter()
+        price = 0
 
-        bytes_stream = BytesIO(foo)
-        reader = PdfReader(bytes_stream)
+        for file in files:
+            reader: PdfReader = PdfReader(file)
+
+            for page in reader.pages:
+                price += 1
+                writer.add_page(page)
+
+            if duplex:
+                page_count: int = len(reader.pages)
+                if page_count % 2 == 1:
+                    writer.add_blank_page()
+
+        # foo = file.read()
+
+        # bytes_stream = BytesIO(foo)
+        # reader = PdfReader(bytes_stream)
 
         # TODO: fill in num_pages
-        if safe_withdraw(request.user.get_username(), len(reader.pages)) == False:
+        if not safe_withdraw(request.user.get_username(), price):
             return Response(
                 {"message": "Not enough balance"}, status=status.HTTP_200_OK
             )
 
-        response: JobResponse = PRINTER_CLIENT.send_print_job("ta", "ta", foo, duplex)
+        output_stream = BytesIO()
+        writer.write(output_stream)
+
+        response: JobResponse = PRINTER_CLIENT.send_print_job(
+            "ta", "ta", output_stream.getvalue(), duplex
+        )
 
         print(response)
 
