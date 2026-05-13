@@ -1,3 +1,4 @@
+import re
 from collections.abc import Sequence
 from io import BytesIO
 from typing import TypedDict, cast
@@ -12,6 +13,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from .newprinting_db.admin.admin import is_admin
 from .newprinting_db.balance.balance_calculator import (
     query_balance,
     safe_withdraw,
@@ -169,9 +171,19 @@ class JobDetailView(APIView):
 
 class AdminView(APIView):
     def post(self, request: Request):
+        if not request.user.is_authenticated:
+            return Response("Not logged in", status=status.HTTP_401_UNAUTHORIZED)
+
+        current_user: User = cast(User, request.user)
+
+        if not is_admin(current_user.get_username()):
+            return Response(
+                "Current user is not admin", status=status.HTTP_403_FORBIDDEN
+            )
+
         username: str = str(request.data.get("username"))
         amount: str = str(request.data.get("amount"))
-        (result, message) = set_balance(username, int(amount))
+        (result, _message) = set_balance(username, int(amount))
         if result:
             return Response("success", status=status.HTTP_200_OK)
         else:
