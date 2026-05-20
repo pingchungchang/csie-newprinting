@@ -1,0 +1,75 @@
+scope: ${PATRONI_CLUSTER_NAME}
+name: ${NODE_NAME}
+
+restapi:
+  listen: 0.0.0.0:8008
+  connect_address: ${NODE_IP}:8008
+  authentication:
+    username: patroni
+    password: ${PATRONI_RESTAPI_PASSWORD}
+
+etcd3:
+  hosts: ${NODE1_IP}:2379,${NODE2_IP}:2379,${NODE3_IP}:2379
+
+bootstrap:
+  dcs:
+    ttl: 30
+    loop_wait: 10
+    retry_timeout: 10
+    maximum_lag_on_failover: 1048576  # 1MB - don't promote replicas lagging more than this
+    synchronous_mode: false
+    postgresql:
+      use_pg_rewind: true
+      use_slots: true
+      parameters:
+        wal_level: replica
+        hot_standby: "on"
+        max_wal_senders: 10
+        max_replication_slots: 10
+        wal_keep_size: 256MB
+        max_connections: 200
+        shared_preload_libraries: ""
+
+  post_bootstrap: /bin/bash -c "psql -U ${PG_SUPERUSER} -d postgres -f /docker-entrypoint-initdb.d/init.sql"
+
+  initdb:
+    - encoding: UTF8
+    - data-checksums
+
+  pg_hba:
+    - host replication ${PG_REPL_USER} 0.0.0.0/0 md5
+    - host all all 0.0.0.0/0 md5
+
+  users:
+    ${PG_SUPERUSER}:
+      password: ${PG_SUPERUSER_PASSWORD}
+      options:
+        - createrole
+        - createdb
+    ${PG_REPL_USER}:
+      password: ${PG_REPL_PASSWORD}
+      options:
+        - replication
+
+postgresql:
+  listen: 0.0.0.0:5432
+  connect_address: ${NODE_IP}:5432
+  data_dir: /var/lib/postgresql/data/patroni
+  pgpass: /tmp/pgpass0
+  authentication:
+    superuser:
+      username: ${PG_SUPERUSER}
+      password: ${PG_SUPERUSER_PASSWORD}
+    replication:
+      username: ${PG_REPL_USER}
+      password: ${PG_REPL_PASSWORD}
+  parameters:
+    unix_socket_directories: '/var/run/postgresql'
+  create_replica_methods:
+    - basebackup
+  basebackup:
+    max-rate: '100M'
+    checkpoint: 'fast'
+
+watchdog:
+  mode: off

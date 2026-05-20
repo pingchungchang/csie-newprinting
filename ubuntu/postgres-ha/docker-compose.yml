@@ -1,0 +1,61 @@
+services:
+  etcd:
+    image: quay.io/coreos/etcd:v3.5.17
+    container_name: pg-ha-etcd
+    network_mode: host
+    restart: unless-stopped
+    command:
+      - etcd
+      - --name=${NODE_NAME}
+      - --data-dir=/etcd-data
+      - --listen-client-urls=http://0.0.0.0:${ETCD_CLIENT_PORT}
+      - --advertise-client-urls=http://${NODE_IP}:${ETCD_CLIENT_PORT}
+      - --listen-peer-urls=http://0.0.0.0:${ETCD_PEER_PORT}
+      - --initial-advertise-peer-urls=http://${NODE_IP}:${ETCD_PEER_PORT}
+      - --initial-cluster=${ETCD_INITIAL_CLUSTER}
+      - --initial-cluster-token=pg-ha-etcd-cluster
+      - --initial-cluster-state=new
+
+  patroni:
+    build:
+      context: ./patroni
+      args:
+        PG_VERSION: ${PG_VERSION}
+    image: pg-ha-patroni
+    container_name: pg-ha-patroni
+    network_mode: host
+    restart: unless-stopped
+    depends_on:
+      etcd:
+        condition: service_started
+    environment:
+      - PATRONI_CLUSTER_NAME=${PATRONI_CLUSTER_NAME}
+      - NODE_NAME=${NODE_NAME}
+      - NODE_IP=${NODE_IP}
+      - NODE1_IP=${NODE1_IP}
+      - NODE2_IP=${NODE2_IP}
+      - NODE3_IP=${NODE3_IP}
+      - PG_SUPERUSER=${PG_SUPERUSER}
+      - PG_SUPERUSER_PASSWORD=${PG_SUPERUSER_PASSWORD}
+      - PG_REPL_USER=${PG_REPL_USER}
+      - PG_REPL_PASSWORD=${PG_REPL_PASSWORD}
+      - PATRONI_RESTAPI_PASSWORD=${PATRONI_RESTAPI_PASSWORD}
+    volumes:
+      - pg-ha-data:/var/lib/postgresql/data
+
+  haproxy:
+    build: ./haproxy
+    image: pg-ha-haproxy
+    container_name: pg-ha-haproxy
+    network_mode: host
+    restart: unless-stopped
+    depends_on:
+      patroni:
+        condition: service_started
+    environment:
+      - NODE1_IP=${NODE1_IP}
+      - NODE2_IP=${NODE2_IP}
+      - NODE3_IP=${NODE3_IP}
+
+volumes:
+  pg-ha-data:
