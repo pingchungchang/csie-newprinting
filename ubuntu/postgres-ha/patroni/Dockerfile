@@ -21,7 +21,8 @@ ENV PATH="/opt/patroni/bin:${PATH}"
 
 COPY patroni.yml /etc/patroni/patroni.yml
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
+COPY post_init.sh /usr/local/bin/post_init.sh
 COPY init.sql /docker-entrypoint-initdb.d/init.sql
-RUN chmod +x /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh /usr/local/bin/post_init.sh
 
 ENTRYPOINT ["entrypoint.sh"]
