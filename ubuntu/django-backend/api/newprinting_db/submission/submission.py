@@ -14,6 +14,7 @@ class JobData:
     printer: str
     created_at: datetime.datetime
     pages: int
+    retry_count: int
     status: str
     @classmethod
     def empty(cls):
@@ -23,8 +24,9 @@ class JobData:
             printer="Unknown",
             created_at=datetime.datetime.now(),
             pages=0,
+            retry_count=0,
             status="Invalid",
-            username="Guest"
+            username="nptest"
         )
 
 logging.basicConfig(
@@ -48,8 +50,8 @@ def get_conn_cursor():
 def create_new_job(job: JobData) -> int:
     sql = '''
         INSERT INTO np_submission (
-            wid, username, printer, pages, status, created_at)
-        VALUES (%s, %s, %s, %s, %s, %s)
+            wid, username, printer, pages, status, retry_count, created_at)
+        VALUES (%s, %s, %s, %s, %s, %s, %s)
         RETURNING uid;
     '''
     data = (
@@ -58,6 +60,7 @@ def create_new_job(job: JobData) -> int:
         job.printer,
         job.pages,
         job.status,
+        job.retry_count,
         job.created_at
     )
     conn, curr = get_conn_cursor()
@@ -75,7 +78,7 @@ def create_new_job(job: JobData) -> int:
 
 def get_job_by_uid(uid: int) -> JobData:
     sql = '''
-        SELECT uid, wid, username, printer, created_at, pages, status
+        SELECT uid, wid, username, printer, created_at, pages, retry_count, status
         FROM np_submission
         WHERE uid = %s;
     '''
@@ -91,7 +94,8 @@ def get_job_by_uid(uid: int) -> JobData:
                     printer=row[3],
                     created_at=row[4],
                     pages=row[5],
-                    status=row[6]
+                    retry_count=row[6],
+                    status=row[7]
                     )
         return JobData.empty()
     except Exception as e:

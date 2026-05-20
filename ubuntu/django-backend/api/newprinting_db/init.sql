@@ -12,6 +12,7 @@ CREATE TABLE np_submission (
     username TEXT NOT NULL,
     printer TEXT NOT NULL,
     pages INTEGER,
+    retry_count INTEGER,
     status TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

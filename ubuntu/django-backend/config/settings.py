@@ -139,15 +139,19 @@ AUTHENTICATION_BACKENDS = [
     "django.contrib.auth.backends.ModelBackend",
 ]
 
-AUTH_LDAP_SERVER_URI = "ldap://172.16.127.109:389"
+AUTH_LDAP_SERVER_URI = "ldaps://172.16.127.151:636"
+AUTH_LDAP_GLOBAL_OPTIONS = {ldap.OPT_X_TLS_REQUIRE_CERT: ldap.OPT_X_TLS_NEVER}
 
 # Add back when no anonymous binding
 AUTH_LDAP_BIND_DN = ""
 AUTH_LDAP_BIND_PASSWORD = ""
 
+AUTH_LDAP_USER_DN_TEMPLATE = "uid=%(user)s,ou=people,dc=csie,dc=ntu,dc=edu,dc=tw"
+'''
 AUTH_LDAP_USER_SEARCH = LDAPSearch(
     "ou=people,dc=csie,dc=ntu,dc=edu,dc=tw", ldap.SCOPE_SUBTREE, "(uid=%(user)s)"
 )
+'''
 
 # debug log
 LOGGING = {
@@ -173,4 +177,4 @@ SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SECURE = False
 
 STATIC_URL = '/static/'
-STATIC_ROOT = '/home/printu1/newprinting/uiux_backend/static'
+STATIC_ROOT = '/home/printu1/csie-newprinting/ubuntu/django-backend/static'

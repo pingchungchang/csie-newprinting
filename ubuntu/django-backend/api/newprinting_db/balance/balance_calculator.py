@@ -32,7 +32,6 @@ ON CONFLICT(username) DO NOTHING;
     cursor.close()
     conn.close()
 
-
 # withdraws money, returns (success or not, msg)
 def safe_withdraw(username: str, amount: int) -> (bool, str):
     conn, cursor = get_conn_cursor()
