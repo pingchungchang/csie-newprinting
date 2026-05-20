@@ -18,6 +18,7 @@ bootstrap:
     retry_timeout: 10
     maximum_lag_on_failover: 1048576  # 1MB - don't promote replicas lagging more than this
     synchronous_mode: false
+    master_start_timeout: 0
     postgresql:
       use_pg_rewind: true
       use_slots: true
