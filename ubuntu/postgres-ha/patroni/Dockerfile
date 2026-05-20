@@ -14,7 +14,7 @@ RUN apt-get update && apt-get install -y \
 # Install Patroni in a venv to avoid PEP 668 issues
 RUN python3 -m venv /opt/patroni && \
     /opt/patroni/bin/pip install --no-cache-dir \
-    patroni[etcd3] \
+    patroni[etcd] \
     psycopg2-binary
 
 ENV PATH="/opt/patroni/bin:${PATH}"
