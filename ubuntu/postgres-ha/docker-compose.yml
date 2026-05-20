@@ -17,7 +17,6 @@ services:
       - --initial-cluster=${ETCD_INITIAL_CLUSTER}
       - --initial-cluster-token=pg-ha-etcd-cluster
       - --initial-cluster-state=new
-      - --enable-v2
 
   patroni:
     build:

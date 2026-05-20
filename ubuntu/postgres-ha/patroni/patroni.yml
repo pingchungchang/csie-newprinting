@@ -8,7 +8,7 @@ restapi:
     username: patroni
     password: ${PATRONI_RESTAPI_PASSWORD}
 
-etcd:
+etcd3:
   hosts: ${NODE1_IP}:2379,${NODE2_IP}:2379,${NODE3_IP}:2379
 
 bootstrap:
