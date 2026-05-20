@@ -13,4 +13,4 @@ open('/tmp/patroni.yml','w').write(result)
 mkdir -p /var/lib/postgresql/data/patroni
 chown -R postgres:postgres /var/lib/postgresql/data
 
-exec patroni /tmp/patroni.yml
+exec su -s /bin/bash postgres -c "patroni /tmp/patroni.yml"
