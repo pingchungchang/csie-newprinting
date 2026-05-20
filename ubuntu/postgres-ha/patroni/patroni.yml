@@ -13,12 +13,13 @@ etcd:
 
 bootstrap:
   dcs:
-    ttl: 30
-    loop_wait: 10
-    retry_timeout: 10
-    maximum_lag_on_failover: 1048576  # 1MB - don't promote replicas lagging more than this
+    ttl: 20
+    loop_wait: 5
+    retry_timeout: 5
+    maximum_lag_on_failover: 33554432  # 32MB
     synchronous_mode: false
     master_start_timeout: 0
+    master_stop_timeout: 0
     postgresql:
       use_pg_rewind: true
       use_slots: true
