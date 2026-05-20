@@ -14,6 +14,8 @@ class JobData:
     printer: str
     created_at: datetime.datetime
     pages: int
+    money: int
+    retry_count: int
     status: str
     @classmethod
     def empty(cls):
@@ -23,6 +25,8 @@ class JobData:
             printer="Unknown",
             created_at=datetime.datetime.now(),
             pages=0,
+            money=0,
+            retry_count=0,
             status="Invalid",
             username="Guest"
         )
@@ -48,8 +52,8 @@ def get_conn_cursor():
 def create_new_job(job: JobData) -> int:
     sql = '''
         INSERT INTO np_submission (
-            wid, username, printer, pages, status, created_at)
-        VALUES (%s, %s, %s, %s, %s, %s)
+            wid, username, printer, pages, money, status, retry_count, created_at)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
         RETURNING uid;
     '''
     data = (
@@ -57,7 +61,9 @@ def create_new_job(job: JobData) -> int:
         job.username,
         job.printer,
         job.pages,
+        job.money,
         job.status,
+        job.retry_count,
         job.created_at
     )
     conn, curr = get_conn_cursor()
@@ -67,7 +73,7 @@ def create_new_job(job: JobData) -> int:
         conn.commit()
         return uid
     except Exception as e:
-        logging.info(f'insert failed!')
+        logging.info(f'insert failed, error: {e}!')
         return -1
     finally:
         curr.close()
@@ -75,7 +81,7 @@ def create_new_job(job: JobData) -> int:
 
 def get_job_by_uid(uid: int) -> JobData:
     sql = '''
-        SELECT uid, wid, username, printer, created_at, pages, status
+        SELECT uid, wid, username, printer, created_at, pages, retry_count, status, money
         FROM np_submission
         WHERE uid = %s;
     '''
@@ -91,7 +97,9 @@ def get_job_by_uid(uid: int) -> JobData:
                     printer=row[3],
                     created_at=row[4],
                     pages=row[5],
-                    status=row[6]
+                    retry_count=row[6],
+                    status=row[7],
+                    money=row[8],
                     )
         return JobData.empty()
     except Exception as e:
@@ -134,7 +142,7 @@ def run_tests():
     init()
     a = JobData.empty()
     a.uid = create_new_job(a)
-    logging.info(a.uid)
+    logging.info(f'get uid of a = {a.uid}')
     print(get_job_by_uid(a.uid))
     print(get_job_by_uid(-1))
     print(modify_by_uid(a.uid, 'printer', 'nptest'))

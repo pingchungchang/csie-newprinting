@@ -33,6 +33,21 @@ CSRF_TRUSTED_ORIGINS = [
     'http://newprinting.csie.org',
 ]
 
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": "redis://127.0.0.1:6379/1",
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+        }
+    }
+}
+
+SESSION_ENGINE = "django.contrib.sessions.backends.cache"
+SESSION_CACHE_ALIAS = "default"
+SESSION_COOKIE_NAME = 'sessionid'
+SESSION_COOKIE_AGE = 86400 * 7
+SESSION_COOKIE_HTTPONLY = True
 
 # Application definition
 
@@ -139,7 +154,9 @@ AUTHENTICATION_BACKENDS = [
     "django.contrib.auth.backends.ModelBackend",
 ]
 
-AUTH_LDAP_SERVER_URI = "ldap://172.16.127.109:389"
+# AUTH_LDAP_SERVER_URI = "ldap://172.16.127.109:389"
+AUTH_LDAP_SERVER_URI = "ldaps://172.16.127.150:636"
+AUTH_LDAP_GLOBAL_OPTIONS = {ldap.OPT_X_TLS_REQUIRE_CERT: ldap.OPT_X_TLS_NEVER}
 
 # Add back when no anonymous binding
 AUTH_LDAP_BIND_DN = ""
