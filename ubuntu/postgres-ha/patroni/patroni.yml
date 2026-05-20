@@ -30,7 +30,7 @@ bootstrap:
         max_connections: 200
         shared_preload_libraries: ""
 
-  post_bootstrap: /bin/bash -c "psql -U ${PG_SUPERUSER} -d postgres -f /docker-entrypoint-initdb.d/init.sql"
+  post_init: /bin/bash -c "psql -U postgres -d postgres -f /docker-entrypoint-initdb.d/init.sql"
 
   initdb:
     - encoding: UTF8
