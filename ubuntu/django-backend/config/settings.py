@@ -25,12 +25,12 @@ SECRET_KEY = "django-insecure-ow5^yzt&t_7n5ipk@#ffwk5&#egf8b&k)%c+-adihza3ozi_i0
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["172.16.127.103", "localhost", 'newprinting.csie.org']
+ALLOWED_HOSTS = ["172.16.127.103", "localhost", "newprinting.csie.org"]
 
 # fix CSRF FAILED
 CSRF_TRUSTED_ORIGINS = [
-    'https://newprinting.csie.org',
-    'http://newprinting.csie.org',
+    "https://newprinting.csie.org",
+    "http://newprinting.csie.org",
 ]
 
 CACHES = {
@@ -39,13 +39,13 @@ CACHES = {
         "LOCATION": "redis://127.0.0.1:6379/1",
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
-        }
+        },
     }
 }
 
 SESSION_ENGINE = "django.contrib.sessions.backends.cache"
 SESSION_CACHE_ALIAS = "default"
-SESSION_COOKIE_NAME = 'sessionid'
+SESSION_COOKIE_NAME = "sessionid"
 SESSION_COOKIE_AGE = 86400 * 7
 SESSION_COOKIE_HTTPONLY = True
 
@@ -170,13 +170,29 @@ AUTH_LDAP_USER_SEARCH = LDAPSearch(
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
+    "formatters": {
+        "verbose": {
+            "format": "{levelname} {asctime} {module} {process:d} {thread:d} {message}",
+            "style": "{",
+        },
+        "simple": {
+            "format": "{levelname} {message}",
+            "style": "{",
+        },
+    },
     "handlers": {
-        "console": {"class": "logging.StreamHandler"},
+        "file": {
+            "level": "INFO",
+            "class": "logging.FileHandler",
+            "filename": BASE_DIR / "logs/django.log",
+            "formatter": "verbose",
+        },
     },
     "loggers": {
-        "django_auth_ldap": {
-            "handlers": ["console"],
-            "level": "DEBUG",
+        "django": {
+            "handlers": ["file"],
+            "level": "INFO",
+            "propagate": True,
         },
     },
 }
@@ -189,5 +205,5 @@ SESSION_EXPIRE_AT_BROWSER_CLOSE = False
 SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SECURE = False
 
-STATIC_URL = '/static/'
-STATIC_ROOT = '/home/printu1/newprinting/uiux_backend/static'
+STATIC_URL = "/static/"
+STATIC_ROOT = "/home/printu1/newprinting/uiux_backend/static"
