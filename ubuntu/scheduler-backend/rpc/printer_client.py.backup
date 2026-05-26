@@ -1,0 +1,157 @@
+import datetime
+import os
+from typing import TypedDict
+
+import grpc
+from cryptography.hazmat.primitives import hashes, serialization
+from cryptography.hazmat.primitives.asymmetric import padding
+
+
+class JobResponse(TypedDict):
+    success: bool
+    message: str
+    job_id: str
+
+
+# import compiled gRPC modules (path depends on execution environment)
+from .generated import print_pb2 as pb2
+from .generated import print_pb2_grpc as pb2_grpc
+
+MAX_MESSAGE_SIZE = 1024 * 1024 * 512  # 512 MB
+
+
+class PrinterClient:
+    def __init__(self, target_ip="172.16.127.106", port="50051"):
+        self.target = f"{target_ip}:{port}"
+        self.send_print_job_options = [
+            ("grpc.max_send_message_length", MAX_MESSAGE_SIZE),
+            ("grpc.max_receive_message_length", MAX_MESSAGE_SIZE),
+        ]
+
+        # get curr dir
+        base_path = os.path.dirname(os.path.abspath(__file__))
+
+        # relative path to RSA public key
+        self.pub_key_path = os.path.normpath(
+            os.path.join(base_path, "..", "certs", "public_key.pem")
+        )
+
+        if not os.path.exists(self.pub_key_path):
+            print(
+                f"[DEBUG] Public key NOT found at: {os.path.abspath(self.pub_key_path)}"
+            )
+
+    def _encrypt_password(self, raw_password):
+        """
+        [RSA Encryption] Encrypt the password using the RSA public key
+        """
+        with open(self.pub_key_path, "rb") as key_file:
+            public_key = serialization.load_pem_public_key(key_file.read())
+
+        # encryption result is bytes
+        encrypted_data = public_key.encrypt(
+            raw_password.encode("utf-8"),
+            padding.OAEP(
+                mgf=padding.MGF1(algorithm=hashes.SHA256()),
+                algorithm=hashes.SHA256(),
+                label=None,
+            ),
+        )
+        return encrypted_data
+
+    def send_print_job(
+        self,
+        user_id: str,
+        raw_password: str,
+        file_content: bytes,
+        is_duplex: bool = True,
+    ) -> JobResponse:
+        """
+        [API] Called to execute a print job
+        """
+        try:
+            # 1. encrypt password
+            enc_pwd = self._encrypt_password(raw_password)
+
+            # 2. build connection
+            with grpc.insecure_channel(
+                self.target, self.send_print_job_options
+            ) as channel:
+                stub = pb2_grpc.PrinterBridgeStub(channel)
+
+                # 3. encapsulate request
+                request = pb2.PrintRequest(
+                    file_content=file_content,
+                    user_id=user_id,
+                    is_duplex=is_duplex,
+                    encrypted_password=enc_pwd,
+                )
+
+                # 4. send request (1.5x-2x of ahk)
+                response = stub.ExecutePrintJob(request, timeout=420)
+
+                # 5. return
+                return {
+                    "success": response.success,
+                    "message": response.message,
+                    "job_id": response.job_id,
+                }
+        except Exception as e:
+            return {
+                "success": False,
+                "message": f"Bridge Error: {str(e)}",
+                "job_id": "",
+            }
+
+    def get_job_status(self, job_id_str: str):
+        """
+        [API] Query status of a single job
+        """
+        try:
+            with grpc.insecure_channel(self.target) as channel:
+                stub = pb2_grpc.PrinterBridgeStub(channel)
+
+                # pass job_id string to Windows, cast to int in server.py
+                request = pb2.StatusRequest(job_id=job_id_str)
+                response = stub.GetJobStatus(request, timeout=10)
+
+                return {
+                    "job_id": str(response.job_id),
+                    "total_pages": str(response.total_pages),
+                    "submit_time": str(response.submit_time),
+                    "state": str(response.state),
+                    "error_message": "",
+                }
+        except Exception as e:
+            return {
+                "job_id": job_id_str,
+                "total_pages": "0",
+                "submit_time": "",
+                "state": "error",
+                "error_message": str(e),
+            }
+
+    def get_all_jobs(self):
+        """
+        [API] Get all jobs (used by the GET /jobs endpoint)
+        """
+        try:
+            with grpc.insecure_channel(self.target) as channel:
+                stub = pb2_grpc.PrinterBridgeStub(channel)
+
+                # use empty protobuf
+                response = stub.GetAllJobs(pb2.Empty())
+
+                jobs_list = []
+                for job in response.jobs:
+                    jobs_list.append(
+                        {
+                            "job_id": job.job_id,
+                            "state": job.state,
+                            "submit_time": job.submit_time,
+                        }
+                    )
+                return jobs_list
+        except Exception as e:
+            return []
+windows_client = PrinterClient(target_ip="127.0.0.1", port="50051")

@@ -82,11 +82,14 @@ WSGI_APPLICATION = "config.wsgi.application"
 
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": "newprinting_db",
+        "USER": "printu",
+        "PASSWORD": "nasa3!Nasa3!",
+        "HOST": "127.0.0.1",
+        "PORT": "5000",
     }
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators

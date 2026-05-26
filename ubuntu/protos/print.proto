@@ -1,0 +1,45 @@
+syntax = "proto3";
+
+package print;
+
+service PrinterBridge {
+  rpc ExecutePrintJob (PrintRequest) returns (PrintResponse);
+  
+  // corresponding to get_printer_job_by_id() from Windows
+  rpc GetJobStatus (StatusRequest) returns (StatusResponse);
+
+  // corresponding to get_printer_jobs() from Windows
+  rpc GetAllJobs (Empty) returns (JobListResponse);
+}
+
+// empty protobuf input for GetAllJobs
+message Empty {}
+
+message PrintRequest {
+  bytes file_content = 1;
+  string user_id = 2;
+  bool is_duplex = 3;
+  // no need for password anymore
+}
+
+message PrintResponse {
+  bool success = 1;
+  string message = 2;
+  string job_id = 3;  // (string) 
+}
+
+message StatusRequest {
+  string job_id = 1;  // (string)
+}
+
+// Windows server PrintData dataclass
+message StatusResponse {
+  string job_id = 1;      // (string)
+  int32 total_pages = 2;
+  string submit_time = 3; // string for ISO 8601 format
+  string state = 4;       // status state
+}
+
+message JobListResponse {
+  repeated StatusResponse jobs = 1;
+}

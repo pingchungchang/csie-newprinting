@@ -21,6 +21,17 @@ from .newprinting_db.balance.balance_calculator import (
 )
 from .newprinting_grpc.bridge.printer_client import JobResponse, PrinterClient
 
+# ===========
+import os
+import uuid
+from .newprinting_db.submission.crud import create_submission, mark_submission_refunded
+from .newprinting_grpc.scheduler_client import SchedulerClient
+
+# Shared directory for passing files to the Scheduler
+SHARED_DIR = os.environ.get("SHARED_PRINT_DIR", "/tmp/shared_printing")
+SCHEDULER = SchedulerClient()
+
+# ===========
 
 class PdfUploadData(TypedDict):
     file: serializers.FileField
@@ -107,10 +118,12 @@ class PrintView(APIView):
             list[UploadedFile], serializer.validated_data["files"]
         )
         duplex: bool = cast(bool, serializer.validated_data["duplex"])
+        username = request.user.get_username()
 
         writer: PdfWriter = PdfWriter()
         price = 0
 
+        # process PDF and calculate price
         for file in files:
             reader: PdfReader = PdfReader(file)
 
@@ -121,41 +134,58 @@ class PrintView(APIView):
             if duplex:
                 page_count: int = len(reader.pages)
                 if page_count % 2 == 1:
-                    writer.add_blank_page()
+                    writer.add_blank_page(page)
 
-        # foo = file.read()
+        # deduct balance
+        if not safe_withdraw(username, price):
+            return Response({"message": "Not enough balance"}, status=status.HTTP_402_PAYMENT_REQUIRED)
 
-        # bytes_stream = BytesIO(foo)
-        # reader = PdfReader(bytes_stream)
+        # create db skeleton to get uid
+        try:
+            uid = create_submission(username=username, printer="default", pages=price, money=price)
+        except Exception:
+            # create submission failed -> refund
+            current_balance = query_balance(username)
+            set_balance(username, current_balance + price)
+            return Response({"message": "Database error during submission"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-        # TODO: fill in num_pages
-        if not safe_withdraw(request.user.get_username(), price):
-            return Response(
-                {"message": "Not enough balance"}, status=status.HTTP_200_OK
-            )
+        # atomic file write avoid race condition
+        os.makedirs(SHARED_DIR, exist_ok=True)
+        temp_filename = f"{uuid.uuid4()}.tmp"
+        temp_filepath = os.path.join(SHARED_DIR, temp_filename)
+        final_filepath = os.path.join(SHARED_DIR, f"{uid}.pdf")
 
-        output_stream = BytesIO()
-        writer.write(output_stream)
+        try:
+            # write to uuid tmp file first
+            with open(temp_filepath, "wb") as f:
+                writer.write(f)
+            
+            # atomic rename make sure that scheduler can only access fully written files
+            os.rename(temp_filepath, final_filepath)
+        except Exception as e:
+            # clean up
+            if os.path.exists(temp_filepath):
+                os.remove(temp_filepath)
+            # mark submission as failed / refunded
+            current_balance = query_balance(username)
+            set_balance(username, current_balance + price)
+            mark_submission_refunded(uid, f"File system error: {str(e)}")
+            return Response({"message": f"File system error: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-        response: JobResponse = PRINTER_CLIENT.send_print_job(
-            "ta", "ta", output_stream.getvalue(), duplex
-        )
+        # notify scheduler via gRPC
+        success = SCHEDULER.submit_job(uid=uid, username=username, total_pages=price)
 
-        print(response)
-
-        if response["job_id"] == "":
-            return Response(
-                {"jobId": "", "balance": "0.0"}, status=status.HTTP_403_FORBIDDEN
-            )
+        if not success:
+            # scheduler worker handles pending orphan submissions
+            pass
 
         return Response(
             {
-                "jobId": response["job_id"],
-                "balance": get_user_balance(request.user.get_username()),
+                "jobId": str(uid),
+                "balance": get_user_balance(username),
             },
             status=status.HTTP_202_ACCEPTED,
         )
-
 
 # TODO
 class JobListView(APIView):
