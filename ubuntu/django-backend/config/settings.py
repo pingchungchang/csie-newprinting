@@ -30,8 +30,7 @@ ALLOWED_HOSTS = ["172.16.127.103", "localhost", 'newprinting.csie.org']
 # fix CSRF FAILED
 CSRF_TRUSTED_ORIGINS = [
     'https://newprinting.csie.org',
-    'http://newprinting.csie.org',
-]
+    'http://newprinting.csie.org', ]
 
 
 # Application definition
@@ -142,7 +141,7 @@ AUTHENTICATION_BACKENDS = [
     "django.contrib.auth.backends.ModelBackend",
 ]
 
-AUTH_LDAP_SERVER_URI = "ldaps://172.16.127.151:636"
+AUTH_LDAP_SERVER_URI = "ldaps://172.16.127.150:636"
 AUTH_LDAP_GLOBAL_OPTIONS = {ldap.OPT_X_TLS_REQUIRE_CERT: ldap.OPT_X_TLS_NEVER}
 
 # Add back when no anonymous binding

@@ -1,6 +1,7 @@
 import os
 import psycopg2
 from psycopg2 import sql
+from psycopg2.extras import RealDictCursor
 from dotenv import load_dotenv
 import logging
 import datetime
@@ -16,6 +17,7 @@ class JobData:
     pages: int
     retry_count: int
     status: str
+    money: int
     @classmethod
     def empty(cls):
         return cls(
@@ -26,7 +28,8 @@ class JobData:
             pages=0,
             retry_count=0,
             status="Invalid",
-            username="nptest"
+            username="nptest",
+            money=0
         )
 
 logging.basicConfig(
@@ -42,6 +45,9 @@ conn_params = {
     "port": "5432"
 }
 
+def get_conn():
+    return  psycopg2.connect(**conn_params)
+
 def get_conn_cursor():
     conn = psycopg2.connect(**conn_params)
     cursor = conn.cursor()
@@ -50,8 +56,8 @@ def get_conn_cursor():
 def create_new_job(job: JobData) -> int:
     sql = '''
         INSERT INTO np_submission (
-            wid, username, printer, pages, status, retry_count, created_at)
-        VALUES (%s, %s, %s, %s, %s, %s, %s)
+            wid, username, printer, pages, status, retry_count, created_at, money)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
         RETURNING uid;
     '''
     data = (
@@ -61,7 +67,8 @@ def create_new_job(job: JobData) -> int:
         job.pages,
         job.status,
         job.retry_count,
-        job.created_at
+        job.created_at,
+        job.money
     )
     conn, curr = get_conn_cursor()
     try:
@@ -78,7 +85,7 @@ def create_new_job(job: JobData) -> int:
 
 def get_job_by_uid(uid: int) -> JobData:
     sql = '''
-        SELECT uid, wid, username, printer, created_at, pages, retry_count, status
+        SELECT uid, wid, username, printer, created_at, pages, retry_count, status, money
         FROM np_submission
         WHERE uid = %s;
     '''
@@ -95,12 +102,29 @@ def get_job_by_uid(uid: int) -> JobData:
                     created_at=row[4],
                     pages=row[5],
                     retry_count=row[6],
-                    status=row[7]
+                    status=row[7],
+                    money = row[8]
                     )
         return JobData.empty()
     except Exception as e:
         logging.info(f'get job error: {e}')
         return JobData.empty()
+    finally:
+        curr.close()
+        conn.close()
+
+def get_jobs_by_username(username: str) -> [JobData]:
+    sql = "SELECT * FROM np_submission WHERE username = %s;"
+    conn = get_conn()
+    curr = conn.cursor(cursor_factory=RealDictCursor)
+    try:
+        curr.execute(sql, (username,))
+        rows = curr.fetchall()
+        job_list = [JobData(**row) for row in rows]
+        return job_list
+    except Exception as e:
+        logging.info(f'get user job error: {e}')
+        return []
     finally:
         curr.close()
         conn.close()
@@ -139,10 +163,13 @@ def run_tests():
     a = JobData.empty()
     a.uid = create_new_job(a)
     logging.info(a.uid)
+    a.uid = create_new_job(a)
+    logging.info(a.uid)
     print(get_job_by_uid(a.uid))
     print(get_job_by_uid(-1))
     print(modify_by_uid(a.uid, 'printer', 'nptest'))
     print(get_job_by_uid(a.uid))
+    print(get_jobs_by_username('nptest'))
 
 if __name__ == "__main__":
     run_tests()

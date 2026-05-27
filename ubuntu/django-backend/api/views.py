@@ -25,6 +25,7 @@ from .newprinting_grpc.bridge.printer_client import JobResponse, PrinterClient
 import os
 import uuid
 from .newprinting_db.submission.crud import create_submission, mark_submission_refunded
+from .newprinting_db.submission.submission import get_jobs_by_username, get_job_by_uid
 from .newprinting_grpc.scheduler_client import SchedulerClient
 
 # Shared directory for passing files to the Scheduler
@@ -187,17 +188,47 @@ class PrintView(APIView):
             status=status.HTTP_202_ACCEPTED,
         )
 
-# TODO
 class JobListView(APIView):
-    def get(self, _request: Request):
-        return Response(PRINTER_CLIENT.get_all_jobs(), status=status.HTTP_200_OK)
+    def get(self, request: Request):
+        if request.user.is_authenticated:
+            user: User = cast(User, request.user)
+            jobs_list = get_jobs_by_username(user.get_username())
+            jobs_data = [asdict(job) for job in jobs_list]
+            return Response(
+                {
+                    "jobs": jobs_data,
+                },
+                status=status.HTTP_202_ACCEPTED,
+            )
+        else:
+            return Response(
+                {"message": "Not logged in"}, status=status.HTTP_401_UNAUTHORIZED
+            )
 
 
-# TODO
 class JobDetailView(APIView):
-    def get(self, _request: Request, jobId: str):
-        return Response(PRINTER_CLIENT.get_job_status(jobId), status=status.HTTP_200_OK)
-
+    def get(self, request: Request, jobId: int):
+        if request.user.is_authenticated:
+            user: User = cast(User, request.user)
+            job = get_job_by_uid(jobId)
+            if job.username != user.get_username():
+                return Response(
+                    {"message": "Not Found"}, status=status.HTTP_404_NOT_FOUND
+                )
+            else:
+                return Response(
+                    {
+                        "username": job.username,
+                        "pages": job.pages,
+                        "money": job.money,
+                        "create_time": job.created_at,
+                        "status": job.status,
+                    }
+                )
+        else:
+            return Response(
+                {"message": "Not logged in"}, status=status.HTTP_401_UNAUTHORIZED
+            )
 
 class AdminView(APIView):
     def post(self, request: Request):
