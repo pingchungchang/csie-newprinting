@@ -5,9 +5,8 @@ from django.core.management.base import BaseCommand
 
 from api.newprinting_grpc.generated import django_scheduler_pb2
 from api.newprinting_grpc.generated import django_scheduler_pb2_grpc
-from api.newprinting_db.balance.balance_calculator import set_balance, query_balance
 from api.newprinting_db.submission.crud import mark_submission_refunded
-from django.db import transaction
+from django.db import transaction, connection
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +20,6 @@ class DjangoRefundServicer(django_scheduler_pb2_grpc.DjangoServiceServicer):
             # Use transaction to ensure data integrity
             with transaction.atomic():
                 # 1. Look up the submission to get the user and money amount
-                from django.db import connection
                 with connection.cursor() as cursor:
                     cursor.execute("SELECT username, money FROM np_submission WHERE uid = %s FOR UPDATE;", [uid])
                     row = cursor.fetchone()
@@ -29,11 +27,13 @@ class DjangoRefundServicer(django_scheduler_pb2_grpc.DjangoServiceServicer):
                     if not row:
                         return django_scheduler_pb2.RefundResponse(success=False, message="Submission not found")
                     
-                    username, money = row[0], row[1]
+                    username, money, status = row[0], row[1], row[2]
+                    if status == 'refunded':
+                        return django_scheduler_pb2.RefundResponse(success=False, message="Submission already refunded")
 
                 # 2. Add balance back
-                current_balance = query_balance(username)
-                set_balance(username, current_balance + money)
+                # use SQL atomic update to avoid race condition
+                cursor.execute("UPDATE np_balance SET balance = balance + %s WHERE username = %s;", [money, username])
                 
                 # 3. Update submission status
                 mark_submission_refunded(uid, reason)
