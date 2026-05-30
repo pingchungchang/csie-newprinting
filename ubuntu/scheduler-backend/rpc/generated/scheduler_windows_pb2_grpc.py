@@ -3,7 +3,7 @@
 import grpc
 import warnings
 
-from . import print_pb2 as print__pb2
+from . import scheduler_windows_pb2 as scheduler__windows__pb2
 
 GRPC_GENERATED_VERSION = '1.80.0'
 GRPC_VERSION = grpc.__version__
@@ -18,7 +18,7 @@ except ImportError:
 if _version_not_supported:
     raise RuntimeError(
         f'The grpc package installed is at version {GRPC_VERSION},'
-        + ' but the generated code in print_pb2_grpc.py depends on'
+        + ' but the generated code in scheduler_windows_pb2_grpc.py depends on'
         + f' grpcio>={GRPC_GENERATED_VERSION}.'
         + f' Please upgrade your grpc module to grpcio>={GRPC_GENERATED_VERSION}'
         + f' or downgrade your generated code using grpcio-tools<={GRPC_VERSION}.'
@@ -36,18 +36,18 @@ class PrinterBridgeStub(object):
         """
         self.ExecutePrintJob = channel.unary_unary(
                 '/print.PrinterBridge/ExecutePrintJob',
-                request_serializer=print__pb2.PrintRequest.SerializeToString,
-                response_deserializer=print__pb2.PrintResponse.FromString,
+                request_serializer=scheduler__windows__pb2.PrintRequest.SerializeToString,
+                response_deserializer=scheduler__windows__pb2.PrintResponse.FromString,
                 _registered_method=True)
         self.GetJobStatus = channel.unary_unary(
                 '/print.PrinterBridge/GetJobStatus',
-                request_serializer=print__pb2.StatusRequest.SerializeToString,
-                response_deserializer=print__pb2.StatusResponse.FromString,
+                request_serializer=scheduler__windows__pb2.StatusRequest.SerializeToString,
+                response_deserializer=scheduler__windows__pb2.StatusResponse.FromString,
                 _registered_method=True)
         self.GetAllJobs = channel.unary_unary(
                 '/print.PrinterBridge/GetAllJobs',
-                request_serializer=print__pb2.Empty.SerializeToString,
-                response_deserializer=print__pb2.JobListResponse.FromString,
+                request_serializer=scheduler__windows__pb2.Empty.SerializeToString,
+                response_deserializer=scheduler__windows__pb2.JobListResponse.FromString,
                 _registered_method=True)
 
 
@@ -79,18 +79,18 @@ def add_PrinterBridgeServicer_to_server(servicer, server):
     rpc_method_handlers = {
             'ExecutePrintJob': grpc.unary_unary_rpc_method_handler(
                     servicer.ExecutePrintJob,
-                    request_deserializer=print__pb2.PrintRequest.FromString,
-                    response_serializer=print__pb2.PrintResponse.SerializeToString,
+                    request_deserializer=scheduler__windows__pb2.PrintRequest.FromString,
+                    response_serializer=scheduler__windows__pb2.PrintResponse.SerializeToString,
             ),
             'GetJobStatus': grpc.unary_unary_rpc_method_handler(
                     servicer.GetJobStatus,
-                    request_deserializer=print__pb2.StatusRequest.FromString,
-                    response_serializer=print__pb2.StatusResponse.SerializeToString,
+                    request_deserializer=scheduler__windows__pb2.StatusRequest.FromString,
+                    response_serializer=scheduler__windows__pb2.StatusResponse.SerializeToString,
             ),
             'GetAllJobs': grpc.unary_unary_rpc_method_handler(
                     servicer.GetAllJobs,
-                    request_deserializer=print__pb2.Empty.FromString,
-                    response_serializer=print__pb2.JobListResponse.SerializeToString,
+                    request_deserializer=scheduler__windows__pb2.Empty.FromString,
+                    response_serializer=scheduler__windows__pb2.JobListResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -118,8 +118,8 @@ class PrinterBridge(object):
             request,
             target,
             '/print.PrinterBridge/ExecutePrintJob',
-            print__pb2.PrintRequest.SerializeToString,
-            print__pb2.PrintResponse.FromString,
+            scheduler__windows__pb2.PrintRequest.SerializeToString,
+            scheduler__windows__pb2.PrintResponse.FromString,
             options,
             channel_credentials,
             insecure,
@@ -145,8 +145,8 @@ class PrinterBridge(object):
             request,
             target,
             '/print.PrinterBridge/GetJobStatus',
-            print__pb2.StatusRequest.SerializeToString,
-            print__pb2.StatusResponse.FromString,
+            scheduler__windows__pb2.StatusRequest.SerializeToString,
+            scheduler__windows__pb2.StatusResponse.FromString,
             options,
             channel_credentials,
             insecure,
@@ -172,8 +172,8 @@ class PrinterBridge(object):
             request,
             target,
             '/print.PrinterBridge/GetAllJobs',
-            print__pb2.Empty.SerializeToString,
-            print__pb2.JobListResponse.FromString,
+            scheduler__windows__pb2.Empty.SerializeToString,
+            scheduler__windows__pb2.JobListResponse.FromString,
             options,
             channel_credentials,
             insecure,

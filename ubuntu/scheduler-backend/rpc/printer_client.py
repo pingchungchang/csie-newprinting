@@ -7,8 +7,8 @@ class JobResponse(TypedDict):
     message: str
     job_id: str
 
-from .generated import print_pb2 as pb2
-from .generated import print_pb2_grpc as pb2_grpc
+from .generated import scheduler_windows_pb2 as pb2
+from .generated import scheduler_windows_pb2_grpc as pb2_grpc
 
 MAX_MESSAGE_SIZE = 1024 * 1024 * 512  # 512 MB
 

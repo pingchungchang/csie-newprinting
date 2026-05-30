@@ -86,7 +86,7 @@ class SchedulerEngine:
                     continue
 
                 # Send to Windows Server
-                """
+                
                 result = windows_client.send_print_job(
                     user_id=uid, 
                     file_content=file_content,
@@ -96,12 +96,12 @@ class SchedulerEngine:
                 # testing success -> print mock response
                 logger.info(f"[TEST MODE] Mocking Windows RPC for UID {uid}")
                 result = {"success": True, "job_id": 9999}
-                """
-
-                # testing fail -> success: False
+                
+                # testing fail -> retry 3 times and refund
                 logger.warning(f"[TEST MODE] Mocking Windows RPC FAILURE for UID {uid}")
                 result = {"success": False, "message": "Windows Server Connection Timeout"}
                 """
+                
                 if result["success"]:
                     wid = result["job_id"]
                     logger.info(f"[UID {uid}] Successfully sent to Windows. WID: {wid}")
