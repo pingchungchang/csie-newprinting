@@ -24,7 +24,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x16\x64jango_scheduler.proto\x12\x08printing\"Y\n\x10SubmitJobRequest\x12\x0b\n\x03uid\x18\x01 \x01(\t\x12\x10\n\x08username\x18\x02 \x01(\t\x12\x13\n\x0btotal_pages\x18\x03 \x01(\x05\x12\x11\n\tfile_path\x18\x04 \x01(\t\"E\n\x11SubmitJobResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12\x0f\n\x07message\x18\x02 \x01(\t\x12\x0e\n\x06job_id\x18\x03 \x01(\x05\"<\n\rRefundRequest\x12\x0b\n\x03uid\x18\x01 \x01(\t\x12\x0e\n\x06job_id\x18\x02 \x01(\x05\x12\x0e\n\x06reason\x18\x03 \x01(\t\"2\n\x0eRefundResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12\x0f\n\x07message\x18\x02 \x01(\t2]\n\x10SchedulerService\x12I\n\x0eSubmitPrintJob\x12\x1a.printing.SubmitJobRequest\x1a\x1b.printing.SubmitJobResponse2O\n\rDjangoService\x12>\n\tRefundJob\x12\x17.printing.RefundRequest\x1a\x18.printing.RefundResponseb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x16\x64jango_scheduler.proto\x12\x08printing\"Y\n\x10SubmitJobRequest\x12\x0b\n\x03uid\x18\x01 \x01(\x05\x12\x10\n\x08username\x18\x02 \x01(\t\x12\x13\n\x0btotal_pages\x18\x03 \x01(\x05\x12\x11\n\tfile_path\x18\x04 \x01(\t\"B\n\x11SubmitJobResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12\x0f\n\x07message\x18\x02 \x01(\t\x12\x0b\n\x03uid\x18\x03 \x01(\x05\",\n\rRefundRequest\x12\x0b\n\x03uid\x18\x01 \x01(\x05\x12\x0e\n\x06reason\x18\x02 \x01(\t\"2\n\x0eRefundResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12\x0f\n\x07message\x18\x02 \x01(\t2]\n\x10SchedulerService\x12I\n\x0eSubmitPrintJob\x12\x1a.printing.SubmitJobRequest\x1a\x1b.printing.SubmitJobResponse2O\n\rDjangoService\x12>\n\tRefundJob\x12\x17.printing.RefundRequest\x1a\x18.printing.RefundResponseb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -34,13 +34,13 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['_SUBMITJOBREQUEST']._serialized_start=36
   _globals['_SUBMITJOBREQUEST']._serialized_end=125
   _globals['_SUBMITJOBRESPONSE']._serialized_start=127
-  _globals['_SUBMITJOBRESPONSE']._serialized_end=196
-  _globals['_REFUNDREQUEST']._serialized_start=198
-  _globals['_REFUNDREQUEST']._serialized_end=258
-  _globals['_REFUNDRESPONSE']._serialized_start=260
-  _globals['_REFUNDRESPONSE']._serialized_end=310
-  _globals['_SCHEDULERSERVICE']._serialized_start=312
-  _globals['_SCHEDULERSERVICE']._serialized_end=405
-  _globals['_DJANGOSERVICE']._serialized_start=407
-  _globals['_DJANGOSERVICE']._serialized_end=486
+  _globals['_SUBMITJOBRESPONSE']._serialized_end=193
+  _globals['_REFUNDREQUEST']._serialized_start=195
+  _globals['_REFUNDREQUEST']._serialized_end=239
+  _globals['_REFUNDRESPONSE']._serialized_start=241
+  _globals['_REFUNDRESPONSE']._serialized_end=291
+  _globals['_SCHEDULERSERVICE']._serialized_start=293
+  _globals['_SCHEDULERSERVICE']._serialized_end=386
+  _globals['_DJANGOSERVICE']._serialized_start=388
+  _globals['_DJANGOSERVICE']._serialized_end=467
 # @@protoc_insertion_point(module_scope)

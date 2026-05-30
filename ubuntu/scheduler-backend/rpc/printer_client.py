@@ -36,9 +36,9 @@ class PrinterClient:
                 stub = pb2_grpc.PrinterBridgeStub(channel)
 
                 request = pb2.PrintRequest(
-                    file_content=file_content,
-                    user_id=user_id,
-                    is_duplex=is_duplex, 
+                    file_content=bytes(file_content),
+                    user_id=str(user_id),
+                    is_duplex=bool(is_duplex), 
                 )
 
                 response = stub.ExecutePrintJob(request, timeout=420)
@@ -97,5 +97,5 @@ class PrinterClient:
         except Exception as e:
             return []
 
-# use local IP for testing
-windows_client = PrinterClient(target_ip="127.0.0.1", port="50051")
+# target windows vm ip
+windows_client = PrinterClient(target_ip="172.16.127.106", port="50051")

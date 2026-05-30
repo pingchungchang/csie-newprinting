@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package print;
+package scheduler_windows;
 
 service PrinterBridge {
   rpc ExecutePrintJob (PrintRequest) returns (PrintResponse);

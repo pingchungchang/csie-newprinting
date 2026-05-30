@@ -35,17 +35,17 @@ class PrinterBridgeStub(object):
             channel: A grpc.Channel.
         """
         self.ExecutePrintJob = channel.unary_unary(
-                '/print.PrinterBridge/ExecutePrintJob',
+                '/scheduler_windows.PrinterBridge/ExecutePrintJob',
                 request_serializer=scheduler__windows__pb2.PrintRequest.SerializeToString,
                 response_deserializer=scheduler__windows__pb2.PrintResponse.FromString,
                 _registered_method=True)
         self.GetJobStatus = channel.unary_unary(
-                '/print.PrinterBridge/GetJobStatus',
+                '/scheduler_windows.PrinterBridge/GetJobStatus',
                 request_serializer=scheduler__windows__pb2.StatusRequest.SerializeToString,
                 response_deserializer=scheduler__windows__pb2.StatusResponse.FromString,
                 _registered_method=True)
         self.GetAllJobs = channel.unary_unary(
-                '/print.PrinterBridge/GetAllJobs',
+                '/scheduler_windows.PrinterBridge/GetAllJobs',
                 request_serializer=scheduler__windows__pb2.Empty.SerializeToString,
                 response_deserializer=scheduler__windows__pb2.JobListResponse.FromString,
                 _registered_method=True)
@@ -94,9 +94,9 @@ def add_PrinterBridgeServicer_to_server(servicer, server):
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
-            'print.PrinterBridge', rpc_method_handlers)
+            'scheduler_windows.PrinterBridge', rpc_method_handlers)
     server.add_generic_rpc_handlers((generic_handler,))
-    server.add_registered_method_handlers('print.PrinterBridge', rpc_method_handlers)
+    server.add_registered_method_handlers('scheduler_windows.PrinterBridge', rpc_method_handlers)
 
 
  # This class is part of an EXPERIMENTAL API.
@@ -117,7 +117,7 @@ class PrinterBridge(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/print.PrinterBridge/ExecutePrintJob',
+            '/scheduler_windows.PrinterBridge/ExecutePrintJob',
             scheduler__windows__pb2.PrintRequest.SerializeToString,
             scheduler__windows__pb2.PrintResponse.FromString,
             options,
@@ -144,7 +144,7 @@ class PrinterBridge(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/print.PrinterBridge/GetJobStatus',
+            '/scheduler_windows.PrinterBridge/GetJobStatus',
             scheduler__windows__pb2.StatusRequest.SerializeToString,
             scheduler__windows__pb2.StatusResponse.FromString,
             options,
@@ -171,7 +171,7 @@ class PrinterBridge(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/print.PrinterBridge/GetAllJobs',
+            '/scheduler_windows.PrinterBridge/GetAllJobs',
             scheduler__windows__pb2.Empty.SerializeToString,
             scheduler__windows__pb2.JobListResponse.FromString,
             options,

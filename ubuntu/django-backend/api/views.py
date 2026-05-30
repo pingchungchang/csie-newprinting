@@ -19,7 +19,6 @@ from .newprinting_db.balance.balance_calculator import (
     safe_withdraw,
     set_balance,
 )
-from .newprinting_grpc.bridge.printer_client import JobResponse, PrinterClient
 
 # ===========
 import os
@@ -48,9 +47,6 @@ class PdfUploadSerializer(serializers.Serializer[PdfUploadData]):
     duplex: serializers.BooleanField = serializers.BooleanField(
         default=False, label="雙面列印"
     )
-
-
-PRINTER_CLIENT = PrinterClient(target_ip="172.16.127.106", port="50051")
 
 
 def ldap_authenticate(username: str, password: str):

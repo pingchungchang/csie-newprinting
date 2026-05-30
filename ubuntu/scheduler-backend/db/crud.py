@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 DB_CONFIG = {
     "host": os.environ.get("DB_HOST", "127.0.0.1"),
-    "port": os.environ.get("DB_PORT", "5432"),
+    "port": os.environ.get("DB_PORT", "5000"),  # switch to postgres-ha db
     "dbname": os.environ.get("DB_NAME", "newprinting_db"),
     "user": os.environ.get("DB_USER", "printu"),
     "password": os.environ.get("DB_PASSWORD", "nasa3!Nasa3!"),
@@ -19,7 +19,7 @@ def get_db_connection():
     return psycopg2.connect(**DB_CONFIG)
 
 def get_pending_jobs():
-    """使用行級鎖定 (Skip Locked) 撈取 pending 工作"""
+    """get pending jobs using row-level locking (SKIP LOCKED), atomic update status to 'processing'"""
     query = """
         SELECT uid, username, printer, pages, money, retry_count 
         FROM np_submission 
@@ -43,7 +43,7 @@ def get_pending_jobs():
     return jobs
 
 def update_job_status(uid, status, wid=None, retry_increment=False):
-    """更新狀態，如果成功就綁定 Windows ID (wid)"""
+    """update job status, bind wid if success"""
     updates = ["status = %s"]
     params = [status]
     

@@ -18,10 +18,10 @@ class SchedulerClient:
             with grpc.insecure_channel(self.target) as channel:
                 stub = pb2_grpc.SchedulerServiceStub(channel)
                 request = pb2.SubmitJobRequest(
-                    uid=uid,
-                    username=username,
-                    total_pages=total_pages,
-                    file_path="" # We rely on {uid}.pdf convention now
+                    uid=int(uid),
+                    username=str(username),
+                    total_pages=int(total_pages),
+                    file_path=f"{uid}.pdf"
                 )
                 response = stub.SubmitPrintJob(request, timeout=5)
                 if response.success:

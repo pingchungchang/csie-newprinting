@@ -136,8 +136,8 @@ class SchedulerEngine:
         
         # Call Django client for refund
         refund_success = django_client.request_refund(
-            uid=uid,
-            reason=reason
+            uid=int(uid),
+            reason=str(reason)
         )
 
         if not refund_success:
