@@ -17,7 +17,11 @@ class PrinterServicer(pb2_grpc.PrinterBridgeServicer):
         print(f"[RECV] Print request for {request.user_id}")
         try:
             print('[server.py] sending print job to PrinterUtils')
-            success, job_id = PrinterUtils.submit_print_job_bytes(
+            
+            # use printer instance to call
+            my_printer = PrinterUtils.Printer("Ariel-1")
+
+            success, job_id = my_printer.submit_print_job_bytes(
                 request.file_content, 
                 request.is_duplex
             )
@@ -41,7 +45,9 @@ class PrinterServicer(pb2_grpc.PrinterBridgeServicer):
             target_id = int(request.job_id)
             
             # calls get_printer_job_by_id()
-            job_info = PrinterUtils.get_printer_job_by_id(job_id=target_id)
+            # use printer instance to call
+            my_printer = PrinterUtils.Printer("Ariel-1")
+            job_info = my_printer.get_printer_job_by_id(job_id=target_id)
             
             print(f"[DEBUG] Raw Job Data: {job_info}")  # for debug
 
@@ -60,7 +66,9 @@ class PrinterServicer(pb2_grpc.PrinterBridgeServicer):
         print("[LIST] Fetching all jobs")
         try:
             # call get_printer_jobs()
-            all_jobs = PrinterUtils.get_printer_jobs()
+            # use printer instance to call
+            my_printer = PrinterUtils.Printer("Ariel-1")
+            all_jobs = my_printer.get_printer_jobs()
             response = pb2.JobListResponse()
             for job in all_jobs:
                 id_str = str(job.job_id) if hasattr(job, 'job_id') else str(job.get('JobId', 'unknown'))
