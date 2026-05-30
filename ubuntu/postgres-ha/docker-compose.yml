@@ -10,9 +10,9 @@ services:
     environment:
       - NODE_NAME=${NODE_NAME}
       - NODE_IP=${NODE_IP}
-      - ETCD_CLIENT_PORT=${ETCD_CLIENT_PORT}
-      - ETCD_PEER_PORT=${ETCD_PEER_PORT}
-      - ETCD_INITIAL_CLUSTER=${ETCD_INITIAL_CLUSTER}
+      - CLIENT_PORT=${ETCD_CLIENT_PORT}
+      - PEER_PORT=${ETCD_PEER_PORT}
+      - INITIAL_CLUSTER=${ETCD_INITIAL_CLUSTER}
 
   patroni:
     build:
