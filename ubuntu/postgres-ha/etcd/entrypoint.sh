@@ -5,6 +5,8 @@ else
   CLUSTER_STATE="new"
 fi
 
+unset ETCD_INITIAL_CLUSTER ETCD_CLIENT_PORT ETCD_PEER_PORT
+
 exec etcd \
   --name=${NODE_NAME} \
   --data-dir=/etcd-data \
@@ -14,4 +16,5 @@ exec etcd \
   --initial-advertise-peer-urls=http://${NODE_IP}:${ETCD_PEER_PORT} \
   --initial-cluster=${ETCD_INITIAL_CLUSTER} \
   --initial-cluster-token=pg-ha-etcd-cluster \
-  --initial-cluster-state=${CLUSTER_STATE}
+  --initial-cluster-state=${CLUSTER_STATE} \
+  --enable-v2=true
