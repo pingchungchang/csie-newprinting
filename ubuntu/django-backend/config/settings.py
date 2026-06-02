@@ -181,3 +181,37 @@ SESSION_COOKIE_SECURE = False
 
 STATIC_URL = '/static/'
 STATIC_ROOT = '/home/printu1/csie-newprinting/ubuntu/django-backend/static'
+
+# redis stuff
+
+DJANGO_REDIS_CONNECTION_FACTORY ="django_redis.pool.SentinelConnectionFactory"
+REDIS_PASSWORD = 'nasa3!Nasa3!'
+
+CACHES = {
+  "default": {
+      "BACKEND": "django_redis.cache.RedisCache",
+      "LOCATION": "redis://mymaster/0",
+      "OPTIONS": {
+          "CLIENT_CLASS": "django_redis.client.SentinelClient",
+          "SENTINELS": [
+              ("172.16.127.103", 26379),
+              ("172.16.127.122", 26379),
+              ("172.16.127.123", 26379),
+          ],
+          # Auth for the Redis master/replicas
+          "PASSWORD": REDIS_PASSWORD,
+          # Auth for the Sentinels themselves (only needed if you set
+          # `requirepass` on sentinel — we did NOT, so omit unless you add it)
+          # "SENTINEL_KWARGS": {"password": REDIS_PASSWORD},
+          "CONNECTION_POOL_KWARGS": {
+              "socket_connect_timeout": 2,
+              "socket_timeout": 2,
+              "retry_on_timeout": True,
+          },
+      },
+  }
+}
+
+# Make Django sessions use this cache
+SESSION_ENGINE = "django.contrib.sessions.backends.cache"
+SESSION_CACHE_ALIAS = "default"

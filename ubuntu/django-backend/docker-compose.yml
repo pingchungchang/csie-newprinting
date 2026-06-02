@@ -1,6 +1,13 @@
 version: '3.8'
 
 services:
+  migration:
+    build: .
+    command: python manage.py migrate
+    volumes:
+      - .:/app
+    environment:
+      - DB_HOST=172.17.0.1
   web:
     build: .
     command: python manage.py runserver 0.0.0.0:8000
@@ -12,3 +19,6 @@ services:
       replicas: 3
     environment:
       - DB_HOST=172.17.0.1
+    depends_on:
+      migration:
+        condition: service_completed_successfully
