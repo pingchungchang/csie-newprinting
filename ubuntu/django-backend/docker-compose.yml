@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - .:/app
+    ports:
+      - "8001-8003:8000"
+    deploy:
+      replicas: 3
+    environment:
+      - DB_HOST=172.17.0.1
