@@ -1,0 +1,45 @@
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    network_mode: host
+    restart: unless-stopped
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD must be set (see .env)}
+    entrypoint:
+      - sh
+      - -c
+      - |
+        if [ ! -f /state/redis.conf ]; then
+          sed "s|__REDIS_PASSWORD__|$$REDIS_PASSWORD|g" /tpl/redis.conf > /state/redis.conf
+        fi
+        exec redis-server /state/redis.conf
+    volumes:
+      - ./conf:/tpl:ro
+      - redis-state:/state
+      - redis-data:/data
+
+  sentinel:
+    image: redis:7-alpine
+    container_name: sentinel
+    network_mode: host
+    restart: unless-stopped
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD must be set (see .env)}
+    entrypoint:
+      - sh
+      - -c
+      - |
+        if [ ! -f /state/sentinel.conf ]; then
+          sed "s|__REDIS_PASSWORD__|$$REDIS_PASSWORD|g" /tpl/sentinel.conf > /state/sentinel.conf
+        fi
+        exec redis-sentinel /state/sentinel.conf
+    volumes:
+      - ./conf:/tpl:ro
+      - redis-state:/state
+    depends_on:
+      - redis
+
+volumes:
+  redis-data:
+  redis-state:
