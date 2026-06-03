@@ -15,6 +15,7 @@ class JobData:
     printer: str
     created_at: datetime.datetime
     pages: int
+    money: int
     retry_count: int
     status: str
     money: int
@@ -26,6 +27,7 @@ class JobData:
             printer="Unknown",
             created_at=datetime.datetime.now(),
             pages=0,
+            money=0,
             retry_count=0,
             status="Invalid",
             username="nptest",
@@ -65,6 +67,7 @@ def create_new_job(job: JobData) -> int:
         job.username,
         job.printer,
         job.pages,
+        job.money,
         job.status,
         job.retry_count,
         job.created_at,
@@ -77,7 +80,7 @@ def create_new_job(job: JobData) -> int:
         conn.commit()
         return uid
     except Exception as e:
-        logging.info(f'insert failed!')
+        logging.info(f'insert failed, error: {e}!')
         return -1
     finally:
         curr.close()
