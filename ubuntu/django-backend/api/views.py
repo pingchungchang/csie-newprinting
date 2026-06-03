@@ -184,12 +184,14 @@ class PrintView(APIView):
             status=status.HTTP_202_ACCEPTED,
         )
 
+from dataclasses import asdict
 class JobListView(APIView):
     def get(self, request: Request):
         if request.user.is_authenticated:
             user: User = cast(User, request.user)
             jobs_list = get_jobs_by_username(user.get_username())
-            jobs_data = [asdict(job) for job in jobs_list]
+            # jobs_data = [asdict(job) for job in jobs_list]
+            jobs_data = [{"jobId": str(job.uid), 'state': job.status} for job in jobs_list]
             return Response(
                 {
                     "jobs": jobs_data,
