@@ -15,7 +15,6 @@ class JobData:
     printer: str
     created_at: datetime.datetime
     pages: int
-    money: int
     retry_count: int
     status: str
     money: int
@@ -27,7 +26,6 @@ class JobData:
             printer="Unknown",
             created_at=datetime.datetime.now(),
             pages=0,
-            money=0,
             retry_count=0,
             status="Invalid",
             username="nptest",

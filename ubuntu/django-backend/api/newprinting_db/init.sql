@@ -12,7 +12,7 @@ CREATE TABLE np_submission (
     username TEXT NOT NULL,
     printer TEXT NOT NULL,
     pages INTEGER,
-    money INTEGER NOT NULL DEFAULT 0,
+    money INTEGER,
     retry_count INTEGER NOT NULL DEFAULT 0,
     status TEXT NOT NULL DEFAULT 'pending',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP

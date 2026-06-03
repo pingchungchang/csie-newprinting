@@ -6,6 +6,7 @@ services:
     command: bash ./migrate-django.sh
     volumes:
       - .:/app
+      - ./logs:/app/django-backend/logs
     environment:
       - DB_HOST=172.17.0.1
   web:
@@ -14,6 +15,7 @@ services:
     image: new_printing
     volumes:
       - .:/app
+      - ./logs:/app/django-backend/logs
     ports:
       - "8001:8000"
     environment:

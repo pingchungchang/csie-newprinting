@@ -34,18 +34,6 @@ CSRF_TRUSTED_ORIGINS = [
     "http://newprinting.csie.org",
 ]
 
-CACHES = {
-    "default": {
-        "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": "redis://127.0.0.1:6379/1",
-        "OPTIONS": {
-            "CLIENT_CLASS": "django_redis.client.DefaultClient",
-        },
-    }
-}
-
-SESSION_ENGINE = "django.contrib.sessions.backends.cache"
-SESSION_CACHE_ALIAS = "default"
 SESSION_COOKIE_NAME = "sessionid"
 SESSION_COOKIE_AGE = 86400 * 7
 SESSION_COOKIE_HTTPONLY = True
