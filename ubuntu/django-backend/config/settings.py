@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
+import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -97,11 +98,14 @@ WSGI_APPLICATION = "config.wsgi.application"
 
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": "newprinting_db",
+        "USER": "printu",
+        "PASSWORD": "nasa3!Nasa3!",
+        "HOST": os.environ.get("DB_HOST", "127.0.0.1"),
+        "PORT": "5000",
     }
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators
@@ -162,9 +166,12 @@ AUTH_LDAP_GLOBAL_OPTIONS = {ldap.OPT_X_TLS_REQUIRE_CERT: ldap.OPT_X_TLS_NEVER}
 AUTH_LDAP_BIND_DN = ""
 AUTH_LDAP_BIND_PASSWORD = ""
 
+AUTH_LDAP_USER_DN_TEMPLATE = "uid=%(user)s,ou=people,dc=csie,dc=ntu,dc=edu,dc=tw"
+'''
 AUTH_LDAP_USER_SEARCH = LDAPSearch(
     "ou=people,dc=csie,dc=ntu,dc=edu,dc=tw", ldap.SCOPE_SUBTREE, "(uid=%(user)s)"
 )
+'''
 
 # debug log
 LOGGING = {
@@ -205,5 +212,39 @@ SESSION_EXPIRE_AT_BROWSER_CLOSE = False
 SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SECURE = False
 
-STATIC_URL = "/static/"
-STATIC_ROOT = "/home/printu1/newprinting/uiux_backend/static"
+STATIC_URL = '/static/'
+STATIC_ROOT = '/home/printu1/csie-newprinting/ubuntu/django-backend/static'
+
+# redis stuff
+
+DJANGO_REDIS_CONNECTION_FACTORY ="django_redis.pool.SentinelConnectionFactory"
+REDIS_PASSWORD = 'nasa3!Nasa3!'
+
+CACHES = {
+  "default": {
+      "BACKEND": "django_redis.cache.RedisCache",
+      "LOCATION": "redis://mymaster/0",
+      "OPTIONS": {
+          "CLIENT_CLASS": "django_redis.client.SentinelClient",
+          "SENTINELS": [
+              ("172.16.127.103", 26379),
+              ("172.16.127.122", 26379),
+              ("172.16.127.123", 26379),
+          ],
+          # Auth for the Redis master/replicas
+          "PASSWORD": REDIS_PASSWORD,
+          # Auth for the Sentinels themselves (only needed if you set
+          # `requirepass` on sentinel — we did NOT, so omit unless you add it)
+          # "SENTINEL_KWARGS": {"password": REDIS_PASSWORD},
+          "CONNECTION_POOL_KWARGS": {
+              "socket_connect_timeout": 2,
+              "socket_timeout": 2,
+              "retry_on_timeout": True,
+          },
+      },
+  }
+}
+
+# Make Django sessions use this cache
+SESSION_ENGINE = "django.contrib.sessions.backends.cache"
+SESSION_CACHE_ALIAS = "default"

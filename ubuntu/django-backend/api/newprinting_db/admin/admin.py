@@ -81,7 +81,6 @@ def is_admin(username: str) -> bool:
     finally:
         curr.close()
         conn.close()
-
 def init():
     global conn_params
     load_dotenv()
@@ -89,7 +88,9 @@ def init():
     conn_params['user'] = os.getenv("POSTGRES_USER")
     conn_params['password'] = os.getenv("POSTGRES_PASSWORD")
     conn_params['port'] = os.getenv("POSTGRES_PORT")
+    conn_params['host'] = os.getenv("POSTGRES_HOST")
     print(f'conn_params:\n{conn_params}')
+
 
 def run_tests():
     init()
