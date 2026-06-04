@@ -13,7 +13,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .newprinting_db.admin.admin import is_admin
+from .newprinting_db.admin.admin import is_admin, add_admin, remove_admin
 from .newprinting_db.balance.balance_calculator import (
     query_balance,
     safe_withdraw,
@@ -24,7 +24,11 @@ from .newprinting_db.balance.balance_calculator import (
 import os
 import uuid
 from .newprinting_db.submission.crud import create_submission, mark_submission_refunded
-from .newprinting_db.submission.submission import get_jobs_by_username, get_job_by_uid
+from .newprinting_db.submission.submission import (
+    get_jobs_by_username,
+    get_job_by_uid,
+    get_jobs_by_uid_between,
+)
 from .newprinting_grpc.scheduler_client import SchedulerClient
 
 # Shared directory for passing files to the Scheduler
@@ -205,30 +209,45 @@ class JobListView(APIView):
 
 
 class JobDetailView(APIView):
-    def get(self, request: Request, jobId: int):
-        if request.user.is_authenticated:
-            user: User = cast(User, request.user)
-            job = get_job_by_uid(jobId)
-            if job.username != user.get_username():
-                return Response(
-                    {"message": "Not Found"}, status=status.HTTP_404_NOT_FOUND
-                )
-            else:
-                return Response(
-                    {
-                        "username": job.username,
-                        "pages": job.pages,
-                        "money": job.money,
-                        "create_time": job.created_at,
-                        "status": job.status,
-                    }
-                )
-        else:
+    def get(self, request: Request, jobId):
+        if not request.user.is_authenticated:
             return Response(
                 {"message": "Not logged in"}, status=status.HTTP_401_UNAUTHORIZED
             )
 
-class AdminView(APIView):
+        try:
+            uid = int(jobId)
+        except (TypeError, ValueError):
+            return Response(
+                {"message": "Invalid jobId"}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        user: User = cast(User, request.user)
+        job = get_job_by_uid(uid)
+
+        if job.uid == -1:
+            return Response(
+                {"message": "Not Found"}, status=status.HTTP_404_NOT_FOUND
+            )
+
+        if job.username != user.get_username() and not is_admin(user.get_username()):
+            return Response(
+                {"message": "Not Found"}, status=status.HTTP_404_NOT_FOUND
+            )
+
+        return Response(
+            {
+                "username": job.username,
+                "pages": job.pages,
+                "money": job.money,
+                "create_time": job.created_at,
+                "status": job.status,
+            }
+        )
+
+class AdminTransferView(APIView):
+    parser_classes: Sequence[type[BaseParser]] = (JSONParser,)
+
     def post(self, request: Request):
         if not request.user.is_authenticated:
             return Response("Not logged in", status=status.HTTP_401_UNAUTHORIZED)
@@ -247,3 +266,197 @@ class AdminView(APIView):
             return Response("success", status=status.HTTP_200_OK)
         else:
             return Response("failed", status=status.HTTP_200_OK)
+
+
+class AdminMeView(APIView):
+    def get(self, request: Request):
+        if not request.user.is_authenticated:
+            return Response(
+                {"message": "Not logged in"}, status=status.HTTP_401_UNAUTHORIZED
+            )
+
+        current_user: User = cast(User, request.user)
+        username = current_user.get_username()
+        return Response(
+            {"username": username, "is_admin": bool(is_admin(username))},
+            status=status.HTTP_200_OK,
+        )
+
+
+class AdminJobsView(APIView):
+    def get(self, request: Request):
+        if not request.user.is_authenticated:
+            return Response(
+                {"message": "Not logged in"}, status=status.HTTP_401_UNAUTHORIZED
+            )
+
+        current_user: User = cast(User, request.user)
+        if not is_admin(current_user.get_username()):
+            return Response(
+                {"message": "Current user is not admin"},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        start_raw = request.query_params.get("start")
+        end_raw = request.query_params.get("end")
+        try:
+            start = int(str(start_raw))
+            end = int(str(end_raw))
+        except (TypeError, ValueError):
+            return Response(
+                {"message": "Invalid start/end"}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        jobs_list = get_jobs_by_uid_between(start, end)
+        jobs_data = [
+            {"jobId": str(job.uid), "state": job.status, "username": job.username}
+            for job in jobs_list
+        ]
+        return Response({"jobs": jobs_data}, status=status.HTTP_200_OK)
+
+
+class AdminUserView(APIView):
+    def get(self, request: Request):
+        if not request.user.is_authenticated:
+            return Response(
+                {"message": "Not logged in"}, status=status.HTTP_401_UNAUTHORIZED
+            )
+
+        current_user: User = cast(User, request.user)
+        if not is_admin(current_user.get_username()):
+            return Response(
+                {"message": "Current user is not admin"},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        target_username = request.query_params.get("username")
+        if not target_username:
+            return Response(
+                {"message": "Missing username"}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        jobs_list = get_jobs_by_username(target_username)
+        jobs_data = [
+            {"jobId": str(job.uid), "state": job.status} for job in jobs_list
+        ]
+
+        return Response(
+            {
+                "username": target_username,
+                "balance": get_user_balance(target_username),
+                "jobs": jobs_data,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class AdminJobDetailView(APIView):
+    def get(self, request: Request, jobId):
+        if not request.user.is_authenticated:
+            return Response(
+                {"message": "Not logged in"}, status=status.HTTP_401_UNAUTHORIZED
+            )
+
+        current_user: User = cast(User, request.user)
+        if not is_admin(current_user.get_username()):
+            return Response(
+                {"message": "Current user is not admin"},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        try:
+            uid = int(jobId)
+        except (TypeError, ValueError):
+            return Response(
+                {"message": "Invalid jobId"}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        job = get_job_by_uid(uid)
+        if job.uid == -1:
+            return Response(
+                {"message": "Job not found"}, status=status.HTTP_404_NOT_FOUND
+            )
+
+        return Response(
+            {
+                "username": job.username,
+                "pages": job.pages,
+                "money": job.money,
+                "create_time": job.created_at,
+                "status": job.status,
+            }
+        )
+
+
+class AdminAddUserView(APIView):
+    parser_classes: Sequence[type[BaseParser]] = (JSONParser,)
+
+    def post(self, request: Request):
+        if not request.user.is_authenticated:
+            return Response(
+                {"message": "Not logged in"}, status=status.HTTP_401_UNAUTHORIZED
+            )
+
+        current_user: User = cast(User, request.user)
+        if not is_admin(current_user.get_username()):
+            return Response(
+                {"message": "Current user is not admin"},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        target_username = str(request.data.get("username"))
+        try:
+            ok = add_admin(target_username)
+        except Exception as e:
+            return Response(
+                {"status": False, "message": str(e)}, status=status.HTTP_200_OK
+            )
+
+        if ok:
+            return Response(
+                {"status": True, "message": ""}, status=status.HTTP_200_OK
+            )
+        return Response(
+            {"status": False, "message": "add_admin failed"},
+            status=status.HTTP_200_OK,
+        )
+
+
+class AdminRemoveUserView(APIView):
+    parser_classes: Sequence[type[BaseParser]] = (JSONParser,)
+
+    def post(self, request: Request):
+        if not request.user.is_authenticated:
+            return Response(
+                {"message": "Not logged in"}, status=status.HTTP_401_UNAUTHORIZED
+            )
+
+        current_user: User = cast(User, request.user)
+        if not is_admin(current_user.get_username()):
+            return Response(
+                {"message": "Current user is not admin"},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        target_username = str(request.data.get("username"))
+        if target_username == current_user.get_username():
+            return Response(
+                {"status": False, "message": "Cannot remove yourself"},
+                status=status.HTTP_200_OK,
+            )
+
+        try:
+            ok = remove_admin(target_username)
+        except Exception as e:
+            return Response(
+                {"status": False, "message": str(e)}, status=status.HTTP_200_OK
+            )
+
+        if ok:
+            return Response(
+                {"status": True, "message": ""}, status=status.HTTP_200_OK
+            )
+        return Response(
+            {"status": False, "message": "remove_admin failed"},
+            status=status.HTTP_200_OK,
+        )
