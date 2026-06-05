@@ -1,11 +1,14 @@
-import os
-import psycopg2
-from psycopg2 import sql
-from psycopg2.extras import RealDictCursor
-from dotenv import load_dotenv
-import logging
 import datetime
+import logging
 from dataclasses import dataclass
+
+from django.db import connection
+
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s'
+)
+
 
 @dataclass
 class JobData:
@@ -18,6 +21,7 @@ class JobData:
     retry_count: int
     status: str
     money: int
+
     @classmethod
     def empty(cls):
         return cls(
@@ -29,32 +33,33 @@ class JobData:
             retry_count=0,
             status="Invalid",
             username="nptest",
-            money=0
+            money=0,
         )
 
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s'
-)
 
-conn_params = {
-    "host": "127.0.0.1",
-    "database": "newprinting_db",
-    "user": "printu",
-    "password": "IDK",
-    "port": "5432"
-}
+def _rows_to_jobs(cursor) -> list[JobData]:
+    columns = [col[0] for col in cursor.description]
+    out: list[JobData] = []
+    for row in cursor.fetchall():
+        data = dict(zip(columns, row))
+        out.append(
+            JobData(
+                uid=data.get("uid", -1),
+                wid=data.get("wid", 0),
+                username=data.get("username", ""),
+                printer=data.get("printer", ""),
+                created_at=data.get("created_at", datetime.datetime.now()),
+                pages=data.get("pages", 0),
+                retry_count=data.get("retry_count", 0),
+                status=data.get("status", "Invalid"),
+                money=data.get("money", 0),
+            )
+        )
+    return out
 
-def get_conn():
-    return  psycopg2.connect(**conn_params)
-
-def get_conn_cursor():
-    conn = psycopg2.connect(**conn_params)
-    cursor = conn.cursor()
-    return (conn, cursor)
 
 def create_new_job(job: JobData) -> int:
-    sql = '''
+    query = '''
         INSERT INTO np_submission (
             wid, username, printer, pages, status, retry_count, created_at, money)
         VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
@@ -65,37 +70,33 @@ def create_new_job(job: JobData) -> int:
         job.username,
         job.printer,
         job.pages,
-        job.money,
         job.status,
         job.retry_count,
         job.created_at,
-        job.money
+        job.money,
     )
-    conn, curr = get_conn_cursor()
     try:
-        curr.execute(sql, data)
-        uid = curr.fetchone()[0]
-        conn.commit()
-        return uid
+        with connection.cursor() as cursor:
+            cursor.execute(query, data)
+            row = cursor.fetchone()
+            return row[0] if row else -1
     except Exception as e:
         logging.info(f'insert failed, error: {e}!')
         return -1
-    finally:
-        curr.close()
-        conn.close()
+
 
 def get_job_by_uid(uid: int) -> JobData:
-    sql = '''
+    query = '''
         SELECT uid, wid, username, printer, created_at, pages, retry_count, status, money
         FROM np_submission
         WHERE uid = %s;
     '''
-    conn, curr = get_conn_cursor()
     try:
-        curr.execute(sql, (uid,))
-        row = curr.fetchone()
-        if row:
-            return JobData(
+        with connection.cursor() as cursor:
+            cursor.execute(query, (uid,))
+            row = cursor.fetchone()
+            if row:
+                return JobData(
                     uid=row[0],
                     wid=row[1],
                     username=row[2],
@@ -104,74 +105,64 @@ def get_job_by_uid(uid: int) -> JobData:
                     pages=row[5],
                     retry_count=row[6],
                     status=row[7],
-                    money = row[8]
-                    )
-        return JobData.empty()
+                    money=row[8],
+                )
+            return JobData.empty()
     except Exception as e:
         logging.info(f'get job error: {e}')
         return JobData.empty()
-    finally:
-        curr.close()
-        conn.close()
 
-def get_jobs_by_username(username: str) -> [JobData]:
-    sql = "SELECT * FROM np_submission WHERE username = %s;"
-    conn = get_conn()
-    curr = conn.cursor(cursor_factory=RealDictCursor)
+
+def get_jobs_by_username(username: str) -> list[JobData]:
+    query = "SELECT * FROM np_submission WHERE username = %s;"
     try:
-        curr.execute(sql, (username,))
-        rows = curr.fetchall()
-        job_list = [JobData(**row) for row in rows]
-        return job_list
+        with connection.cursor() as cursor:
+            cursor.execute(query, (username,))
+            return _rows_to_jobs(cursor)
     except Exception as e:
         logging.info(f'get user job error: {e}')
         return []
-    finally:
-        curr.close()
-        conn.close()
+
+
+def get_jobs_by_uid_between(start: int, end: int) -> list[JobData]:
+    query = "SELECT * FROM np_submission WHERE uid BETWEEN %s AND %s;"
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute(query, (start, end))
+            return _rows_to_jobs(cursor)
+    except Exception as e:
+        logging.info(f'get jobs by uid range error: {e}')
+        return []
+
+
+_MODIFIABLE_FIELDS = {
+    "wid", "username", "printer", "pages",
+    "status", "retry_count", "created_at", "money",
+}
+
 
 def modify_by_uid(uid: int, entry_name: str, new_value) -> bool:
-    query = sql.SQL("UPDATE np_submission SET {field} = %s WHERE uid = %s").format(
-            field=sql.Identifier(entry_name)
-            )
-    conn, curr = get_conn_cursor()
+    if entry_name not in _MODIFIABLE_FIELDS:
+        logging.info(f'modify by uid rejected unknown field: {entry_name}')
+        return False
     try:
-        curr.execute(query, (new_value, uid))
-        if curr.rowcount == 0:
-            logging.info(f'unable to find uid={uid}, no modify done')
-            return False
-        else:
-            conn.commit()
-            logging.info(f'modifieduid={uid}, entry {entry_name} to {new_value}')
+        with connection.cursor() as cursor:
+            quoted = connection.ops.quote_name(entry_name)
+            cursor.execute(
+                f"UPDATE np_submission SET {quoted} = %s WHERE uid = %s",
+                (new_value, uid),
+            )
+            if cursor.rowcount == 0:
+                logging.info(f'unable to find uid={uid}, no modify done')
+                return False
+            logging.info(f'modified uid={uid}, entry {entry_name} to {new_value}')
+            return True
     except Exception as e:
         logging.info(f'modify by uid error: {e}')
-        return JobData.empty()
-    finally:
-        curr.close()
-        conn.close()
+        return False
+
 
 def init():
-    global conn_params
-    load_dotenv()
-    conn_params['database'] = os.getenv("POSTGRES_DB")
-    conn_params['user'] = os.getenv("POSTGRES_USER")
-    conn_params['password'] = os.getenv("POSTGRES_PASSWORD")
-    conn_params['port'] = os.getenv("POSTGRES_PORT")
-    conn_params['host'] = os.getenv("POSTGRES_HOST")
-    print(f'conn_params:\n{conn_params}')
-
-def run_tests():
-    init()
-    a = JobData.empty()
-    a.uid = create_new_job(a)
-    logging.info(a.uid)
-    a.uid = create_new_job(a)
-    logging.info(a.uid)
-    print(get_job_by_uid(a.uid))
-    print(get_job_by_uid(-1))
-    print(modify_by_uid(a.uid, 'printer', 'nptest'))
-    print(get_job_by_uid(a.uid))
-    print(get_jobs_by_username('nptest'))
-
-if __name__ == "__main__":
-    run_tests()
+    # Kept for backwards compatibility with the standalone test runner.
+    # The Django runtime uses django.db.connection directly.
+    pass
