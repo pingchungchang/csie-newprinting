@@ -21,7 +21,7 @@ class DjangoRefundServicer(django_scheduler_pb2_grpc.DjangoServiceServicer):
             with transaction.atomic():
                 # 1. Look up the submission to get the user and money amount
                 with connection.cursor() as cursor:
-                    cursor.execute("SELECT username, money FROM np_submission WHERE uid = %s FOR UPDATE;", [uid])
+                    cursor.execute("SELECT username, money, status FROM np_submission WHERE uid = %s FOR UPDATE;", [uid])
                     row = cursor.fetchone()
                     
                     if not row:
@@ -31,12 +31,12 @@ class DjangoRefundServicer(django_scheduler_pb2_grpc.DjangoServiceServicer):
                     if status == 'refunded':
                         return django_scheduler_pb2.RefundResponse(success=False, message="Submission already refunded")
 
-                # 2. Add balance back
-                # use SQL atomic update to avoid race condition
-                cursor.execute("UPDATE np_balance SET balance = balance + %s WHERE username = %s;", [money, username])
-                
-                # 3. Update submission status
-                mark_submission_refunded(uid, reason)
+                    # 2. Add balance back
+                    # use SQL atomic update to avoid race condition
+                    cursor.execute("UPDATE np_balance SET balance = balance + %s WHERE username = %s;", [money, username])
+                    
+                    # 3. Update submission status
+                    mark_submission_refunded(uid, reason)
 
             return django_scheduler_pb2.RefundResponse(
                 success=True, 

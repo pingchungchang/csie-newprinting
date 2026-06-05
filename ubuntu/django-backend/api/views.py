@@ -143,7 +143,13 @@ class PrintView(APIView):
 
         # create db skeleton to get uid
         try:
-            uid = create_submission(username=username, printer="default", pages=price, money=price)
+            uid = create_submission(
+                username=username,
+                printer="default",
+                pages=price,
+                money=price,
+                is_duplex=duplex
+            )
         except Exception:
             # create submission failed -> refund
             current_balance = query_balance(username)
