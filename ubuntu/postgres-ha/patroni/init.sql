@@ -15,5 +15,6 @@ CREATE TABLE np_submission (
     money INTEGER,
     retry_count INTEGER NOT NULL DEFAULT 0,
     status TEXT NOT NULL DEFAULT 'pending',
+    is_duplex BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
