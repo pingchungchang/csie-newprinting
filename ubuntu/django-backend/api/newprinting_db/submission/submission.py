@@ -22,6 +22,7 @@ class JobData:
     status: str
     money: int
 
+
     @classmethod
     def empty(cls):
         return cls(
@@ -34,6 +35,7 @@ class JobData:
             status="Invalid",
             username="nptest",
             money=0,
+            is_duplex=True,
         )
 
 
@@ -53,6 +55,7 @@ def _rows_to_jobs(cursor) -> list[JobData]:
                 retry_count=data.get("retry_count", 0),
                 status=data.get("status", "Invalid"),
                 money=data.get("money", 0),
+                is_duplex=data.get("is_duplex", True),
             )
         )
     return out
@@ -61,8 +64,8 @@ def _rows_to_jobs(cursor) -> list[JobData]:
 def create_new_job(job: JobData) -> int:
     query = '''
         INSERT INTO np_submission (
-            wid, username, printer, pages, status, retry_count, created_at, money)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+            wid, username, printer, pages, status, retry_count, created_at, money, is_duplex)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
         RETURNING uid;
     '''
     data = (
@@ -74,6 +77,7 @@ def create_new_job(job: JobData) -> int:
         job.retry_count,
         job.created_at,
         job.money,
+        job.is_duplex,
     )
     try:
         with connection.cursor() as cursor:
@@ -87,7 +91,7 @@ def create_new_job(job: JobData) -> int:
 
 def get_job_by_uid(uid: int) -> JobData:
     query = '''
-        SELECT uid, wid, username, printer, created_at, pages, retry_count, status, money
+        SELECT uid, wid, username, printer, created_at, pages, retry_count, status, money, is_duplex
         FROM np_submission
         WHERE uid = %s;
     '''
@@ -106,6 +110,7 @@ def get_job_by_uid(uid: int) -> JobData:
                     retry_count=row[6],
                     status=row[7],
                     money=row[8],
+                    is_duplex=row[9],
                 )
             return JobData.empty()
     except Exception as e:
@@ -138,6 +143,7 @@ def get_jobs_by_uid_between(start: int, end: int) -> list[JobData]:
 _MODIFIABLE_FIELDS = {
     "wid", "username", "printer", "pages",
     "status", "retry_count", "created_at", "money",
+    "is_duplex",
 }
 
 
