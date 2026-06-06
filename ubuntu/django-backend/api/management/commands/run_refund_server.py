@@ -30,7 +30,9 @@ class DjangoRefundServicer(django_scheduler_pb2_grpc.DjangoServiceServicer):
                     username, money, status = row[0], row[1], row[2]
                     if status == 'refunded':
                         return django_scheduler_pb2.RefundResponse(success=False, message="Submission already refunded")
-
+                    
+                    if status != 'failed':
+                        return django_scheduler_pb2.RefundResponse(success=False, message=f"Cannot refund job with status '{status}'")
                     # 2. Add balance back
                     # use SQL atomic update to avoid race condition
                     cursor.execute("UPDATE np_balance SET balance = balance + %s WHERE username = %s;", [money, username])

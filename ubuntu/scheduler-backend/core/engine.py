@@ -65,6 +65,7 @@ class SchedulerEngine:
                     # Job is not ready for retry yet, revert status back to pending
                     logger.debug(f"[UID {uid}] Skipping retry. Waiting for backoff period.")
                     crud.update_job_status(uid, status="pending")
+                    self.next_wakeup_timeout = min(self.next_wakeup_timeout, self.retry_backoff[uid] - current_time)
                     continue
 
                 logger.info(f"[UID {uid}] Processing print job for user {username}...")
@@ -83,10 +84,10 @@ class SchedulerEngine:
                         file_content = f.read()
                 except IOError as e:
                     logger.error(f"[UID {uid}] Failed to read file: {e}")
-                    self._handle_retry(uid, job['retry_count'])
+                    self._handle_retry(uid, job['retry_count'], file_path)
                     continue
 
-                """
+                
                 # Send to Windows Server
                 
                 result = windows_client.send_print_job(
@@ -94,16 +95,16 @@ class SchedulerEngine:
                     file_content=file_content,
                     is_duplex=is_duplex
                 )
-                                
+                """                
                 # testing success -> print mock response
                 logger.info(f"[TEST MODE] Mocking Windows RPC for UID {uid}")
                 result = {"success": True, "job_id": 9999}
-                """
+                
 
                 # testing fail -> retry 3 times and refund
                 logger.warning(f"[TEST MODE] Mocking Windows RPC FAILURE for UID {uid}")
                 result = {"success": False, "message": "Windows Server Connection Timeout"}
-                
+                """
                 
                 if result["success"]:
                     wid = result["job_id"]
@@ -119,7 +120,7 @@ class SchedulerEngine:
 
     def _handle_retry(self, uid, current_retries, file_path=None):
         """Handles logic when a Windows RPC call fails and decides whether to retry or fail permanently."""
-        if current_retries < 2:
+        if current_retries < 3:
             logger.info(f"[UID {uid}] Retrying later (Current retries: {current_retries})")
             crud.update_job_status(uid, status="pending", retry_increment=True)
             
