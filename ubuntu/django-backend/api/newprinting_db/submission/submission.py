@@ -21,6 +21,7 @@ class JobData:
     retry_count: int
     status: str
     money: int
+    is_duplex: bool
 
 
     @classmethod
