@@ -21,7 +21,7 @@ def get_db_connection():
 def get_pending_jobs():
     """get pending jobs using row-level locking (SKIP LOCKED), atomic update status to 'processing'"""
     query = """
-        SELECT uid, username, printer, pages, money, retry_count 
+        SELECT uid, username, printer, pages, money, retry_count, is_duplex 
         FROM np_submission 
         WHERE status = 'pending' 
         FOR UPDATE SKIP LOCKED;

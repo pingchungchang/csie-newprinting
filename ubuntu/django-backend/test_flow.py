@@ -1,9 +1,9 @@
 import requests
 import json
 
-BASE_URL = "http://localhost:8001/api"
-USERNAME = "testuser" 
-PASSWORD = "test1234"
+BASE_URL = "http://localhost:8000/api"
+USERNAME = "pcc" 
+PASSWORD = "pccpccpcc"
 
 def run_test():
     session = requests.Session()

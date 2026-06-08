@@ -3,18 +3,18 @@ from django.db import connection
 
 logger = logging.getLogger(__name__)
 
-def create_submission(username: str, printer: str, pages: int, money: int) -> int:
+def create_submission(username: str, printer: str, pages: int, money: int, is_duplex: bool) -> int:
     """
     Create a pending submission skeleton in DB and return the generated uid.
     """
     query = """
-        INSERT INTO np_submission (username, printer, pages, money, status, retry_count, created_at)
-        VALUES (%s, %s, %s, %s, 'pending', 0, NOW())
+        INSERT INTO np_submission (username, printer, pages, money, status, retry_count, is_duplex, created_at)
+        VALUES (%s, %s, %s, %s, 'pending', 0, %s, NOW())
         RETURNING uid;
     """
     try:
         with connection.cursor() as cursor:
-            cursor.execute(query, [username, printer, pages, money])
+            cursor.execute(query, [username, printer, pages, money, is_duplex])
             row = cursor.fetchone()
             if row:
                 return row[0]
