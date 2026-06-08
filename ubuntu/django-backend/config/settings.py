@@ -30,9 +30,9 @@ ALLOWED_HOSTS = ["172.16.127.103", "localhost", "newprinting.csie.org"]
 
 # fix CSRF FAILED
 CSRF_TRUSTED_ORIGINS = [
-    "https://newprinting.csie.org",
-    "http://newprinting.csie.org",
-]
+        "https://newprinting.csie.org",
+        "http://newprinting.csie.org",
+        ]
 
 SESSION_COOKIE_NAME = "sessionid"
 SESSION_COOKIE_AGE = 86400 * 7
@@ -41,42 +41,42 @@ SESSION_COOKIE_HTTPONLY = True
 # Application definition
 
 INSTALLED_APPS = [
-    "django.contrib.admin",
-    "django.contrib.auth",
-    "django.contrib.contenttypes",
-    "django.contrib.sessions",
-    "django.contrib.messages",
-    "django.contrib.staticfiles",
-    "rest_framework",
-    "api",
-]
+        "django.contrib.admin",
+        "django.contrib.auth",
+        "django.contrib.contenttypes",
+        "django.contrib.sessions",
+        "django.contrib.messages",
+        "django.contrib.staticfiles",
+        "rest_framework",
+        "api",
+        ]
 
 MIDDLEWARE = [
-    "django.middleware.security.SecurityMiddleware",
-    "django.contrib.sessions.middleware.SessionMiddleware",
-    "django.middleware.common.CommonMiddleware",
-    "django.middleware.csrf.CsrfViewMiddleware",
-    "django.contrib.auth.middleware.AuthenticationMiddleware",
-    "django.contrib.messages.middleware.MessageMiddleware",
-    "django.middleware.clickjacking.XFrameOptionsMiddleware",
-]
+        "django.middleware.security.SecurityMiddleware",
+        "django.contrib.sessions.middleware.SessionMiddleware",
+        "django.middleware.common.CommonMiddleware",
+        "django.middleware.csrf.CsrfViewMiddleware",
+        "django.contrib.auth.middleware.AuthenticationMiddleware",
+        "django.contrib.messages.middleware.MessageMiddleware",
+        "django.middleware.clickjacking.XFrameOptionsMiddleware",
+        ]
 
 ROOT_URLCONF = "config.urls"
 
 TEMPLATES = [
-    {
-        "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
-        "APP_DIRS": True,
-        "OPTIONS": {
-            "context_processors": [
-                "django.template.context_processors.request",
-                "django.contrib.auth.context_processors.auth",
-                "django.contrib.messages.context_processors.messages",
-            ],
-        },
-    },
-]
+        {
+            "BACKEND": "django.template.backends.django.DjangoTemplates",
+            "DIRS": [],
+            "APP_DIRS": True,
+            "OPTIONS": {
+                "context_processors": [
+                    "django.template.context_processors.request",
+                    "django.contrib.auth.context_processors.auth",
+                    "django.contrib.messages.context_processors.messages",
+                    ],
+                },
+            },
+        ]
 
 WSGI_APPLICATION = "config.wsgi.application"
 
@@ -85,33 +85,33 @@ WSGI_APPLICATION = "config.wsgi.application"
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
 DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": "newprinting_db",
-        "USER": "printu",
-        "PASSWORD": "nasa3!Nasa3!",
-        "HOST": os.environ.get("DB_HOST", "127.0.0.1"),
-        "PORT": "5000",
-    }
-}
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": "newprinting_db",
+            "USER": "printu",
+            "PASSWORD": "nasa3!Nasa3!",
+            "HOST": os.environ.get("DB_HOST", "127.0.0.1"),
+            "PORT": "5000",
+            }
+        }
 
 # Password validation
 # https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators
 
 AUTH_PASSWORD_VALIDATORS = [
-    {
-        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
-    },
-    {
-        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
-    },
-    {
-        "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
-    },
-    {
-        "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
-    },
-]
+        {
+            "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
+            },
+        {
+            "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
+            },
+        {
+            "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
+            },
+        {
+            "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
+            },
+        ]
 
 
 # Internationalization
@@ -132,19 +132,19 @@ USE_TZ = True
 STATIC_URL = "static/"
 
 REST_FRAMEWORK = {
-    "DEFAULT_AUTHENTICATION_CLASSES": [
-        "rest_framework.authentication.SessionAuthentication",
-    ],
-}
+        "DEFAULT_AUTHENTICATION_CLASSES": [
+            "rest_framework.authentication.SessionAuthentication",
+            ],
+        }
 
 # LDAP Auth
 import ldap
 from django_auth_ldap.config import LDAPSearch
 
 AUTHENTICATION_BACKENDS = [
-    "django_auth_ldap.backend.LDAPBackend",
-    "django.contrib.auth.backends.ModelBackend",
-]
+        "django_auth_ldap.backend.LDAPBackend",
+        "django.contrib.auth.backends.ModelBackend",
+        ]
 
 # AUTH_LDAP_SERVER_URI = "ldap://172.16.127.109:389"
 AUTH_LDAP_SERVER_URI = "ldaps://172.16.127.150:636"
@@ -163,34 +163,34 @@ AUTH_LDAP_USER_SEARCH = LDAPSearch(
 
 # debug log
 LOGGING = {
-    "version": 1,
-    "disable_existing_loggers": False,
-    "formatters": {
-        "verbose": {
-            "format": "{levelname} {asctime} {module} {process:d} {thread:d} {message}",
-            "style": "{",
-        },
-        "simple": {
-            "format": "{levelname} {message}",
-            "style": "{",
-        },
-    },
-    "handlers": {
-        "file": {
-            "level": "INFO",
-            "class": "logging.FileHandler",
-            "filename": BASE_DIR / "logs/django.log",
-            "formatter": "verbose",
-        },
-    },
-    "loggers": {
-        "django": {
-            "handlers": ["file"],
-            "level": "INFO",
-            "propagate": True,
-        },
-    },
-}
+        "version": 1,
+        "disable_existing_loggers": False,
+        "formatters": {
+            "verbose": {
+                "format": "{levelname} {asctime} {module} {process:d} {thread:d} {message}",
+                "style": "{",
+                },
+            "simple": {
+                "format": "{levelname} {message}",
+                "style": "{",
+                },
+            },
+        "handlers": {
+            "file": {
+                "level": "INFO",
+                "class": "logging.FileHandler",
+                "filename": BASE_DIR / "logs/django.log",
+                "formatter": "verbose",
+                },
+            },
+        "loggers": {
+            "django": {
+                "handlers": ["file"],
+                "level": "INFO",
+                "propagate": True,
+                },
+            },
+        }
 
 # SESSION CONFIGS
 SESSION_COOKIE_AGE = 3600
@@ -209,29 +209,33 @@ DJANGO_REDIS_CONNECTION_FACTORY ="django_redis.pool.SentinelConnectionFactory"
 REDIS_PASSWORD = 'nasa3!Nasa3!'
 
 CACHES = {
-  "default": {
-      "BACKEND": "django_redis.cache.RedisCache",
-      "LOCATION": "redis://mymaster/0",
-      "OPTIONS": {
-          "CLIENT_CLASS": "django_redis.client.SentinelClient",
-          "SENTINELS": [
-              ("172.16.127.103", 26379),
-              ("172.16.127.122", 26379),
-              ("172.16.127.123", 26379),
-          ],
-          # Auth for the Redis master/replicas
-          "PASSWORD": REDIS_PASSWORD,
-          # Auth for the Sentinels themselves (only needed if you set
-          # `requirepass` on sentinel — we did NOT, so omit unless you add it)
-          # "SENTINEL_KWARGS": {"password": REDIS_PASSWORD},
-          "CONNECTION_POOL_KWARGS": {
-              "socket_connect_timeout": 2,
-              "socket_timeout": 2,
-              "retry_on_timeout": True,
-          },
-      },
-  }
-}
+        "default": {
+            "BACKEND": "django_redis.cache.RedisCache",
+            "LOCATION": "redis://mymaster/0",
+            "OPTIONS": {
+                "CLIENT_CLASS": "django_redis.client.SentinelClient",
+                "SENTINELS": [
+                    ("172.16.127.103", 26379),
+                    ("172.16.127.122", 26379),
+                    ("172.16.127.123", 26379),
+                    ],
+                # Auth for the Redis master/replicas
+                "PASSWORD": REDIS_PASSWORD,
+                # Auth for the Sentinels themselves (only needed if you set
+                # `requirepass` on sentinel — we did NOT, so omit unless you add it)
+                # "SENTINEL_KWARGS": {"password": REDIS_PASSWORD},
+                "SENTINEL_KWARGS": {
+                    "socket_connect_timeout": 0.5,
+                    "socket_timeout": 0.5,
+                    },
+                "CONNECTION_POOL_KWARGS": {
+                    "socket_connect_timeout": 2,
+                    "socket_timeout": 2,
+                    "retry_on_timeout": True,
+                    },
+                },
+            }
+        }
 
 # Make Django sessions use this cache
 SESSION_ENGINE = "django.contrib.sessions.backends.cache"
