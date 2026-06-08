@@ -13,9 +13,9 @@ etcd:
 
 bootstrap:
   dcs:
-    ttl: 20
-    loop_wait: 5
-    retry_timeout: 5
+    ttl: 60
+    loop_wait: 10
+    retry_timeout: 15
     maximum_lag_on_failover: 33554432  # 32MB
     synchronous_mode: false
     master_start_timeout: 0
