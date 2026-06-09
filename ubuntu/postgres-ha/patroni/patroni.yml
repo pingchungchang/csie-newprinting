@@ -13,6 +13,7 @@ etcd:
 
 bootstrap:
   dcs:
+    failsafe_mode: true
     ttl: 60
     loop_wait: 10
     retry_timeout: 15
