@@ -36,7 +36,7 @@ jobs:
           python-version: '3.12'
           cache: 'pip'  
       - run: |
-          sudo apt install openldap
+          sudo apt install slapd ldap-utils
           python -m pip install --upgrade pip
           pip install -r ubuntu/django-backend/requirements.txt
           pip install -r ubuntu/scheduler-backend/requirements.txt  
